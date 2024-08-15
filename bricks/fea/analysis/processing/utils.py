@@ -89,8 +89,7 @@ def compute_damage_parameter(crack_dict) -> float:
         c_w_n += [c_w**2 * l_c]
         c_w_d += [c_w * l_c]
         
-    c_w = sum(c_w_n) / sum(c_w_d) if len(c_w_d) != 0 else 0
-    
+    c_w = sum(c_w_n) / sum(c_w_d) if (len(c_w_d) != 0) and (sum(c_w_d) != 0) else 0
     psi = 2 * n_c**0.15 * c_w**0.3
     return psi
 
@@ -136,7 +135,6 @@ def compute_damage_parameter_manual(df, damage: dict = None) -> float:
 
     for elements in damage['EOI']:
         n_c += 1
-        n_steps = len(df['Step nr.'].unique())
         n_el = find_nel(df, elements)
         l_c = el_size * n_el
         c_w_df = find_mean_cw(elements, df)
@@ -155,7 +153,6 @@ def compute_damage_parameter_manual(df, damage: dict = None) -> float:
 
 def find_nel(df,elements):
     filtered_df = df[df['Element'].isin(elements)]
-    n_steps = len(df['Step nr.'].unique()) # Find Nsteps
     n_el = filtered_df.groupby('Step nr.')['Ecw1'].apply(lambda x: x.dropna().count())
     return n_el
 

@@ -1,12 +1,6 @@
-import io
-import os
-import time
-import itertools
-
-import numpy as np
-import pandas as pd
-import pickle
-
+# ---------------------------------------------------------------------------- #
+#                                 Model object                                 #
+# ---------------------------------------------------------------------------- #
 class WALL:
     def __init__(self, model_path, tb_path, scalers, target, bounds):
         """

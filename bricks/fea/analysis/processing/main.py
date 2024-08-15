@@ -41,12 +41,24 @@ def analyse_tabulated(df, analysis_info):
                 vals.append(find_max_cw(EOI, df))
 
         if 'Damage' in analysis:
-            for param in analysis_info[analysis]['parameters']:
-                if param == 'cracks':
-                    for crack_set in analysis_info[analysis]['parameters'][param]: 
-                        c_w = compute_damage_parameter_manual(df, crack_set)
-                        vals.append(c_w)
-            
+            if analysis_info[analysis]['parameters']['auto']:
+                mesh = analysis_info[analysis]['parameters']['mesh']
+                d_threshold = (2 * (mesh / 2)**2)**(1/2) # Max diag distance in quadratic mesh
+                
+                temp = []
+                for step in df['Step nr.'].unique():
+                    df_filtered = df[(df['Step nr.'] == step) & (df['Ecw1'] >= 0.5) & (pd.notna(df['Element']))][['Element', 'Integration Point', 'X0', 'Y0', 'Ecw1']]
+                    
+                    crack_dict = analyze_cracks(df_filtered, d_threshold)
+                    psi = compute_damage_parameter(crack_dict)
+                    temp.append({'step': step, 'psi': psi})
+                vals.append(pd.DataFrame(temp))
+
+            if not analysis_info[analysis]['parameters']['auto']:
+                for crack_set in analysis_info[analysis]['parameters']['cracks']: 
+                    c_w = compute_damage_parameter_manual(df, crack_set)
+                    vals.append(c_w)
+        
         data[analysis] = vals
     return data
 
@@ -85,9 +97,21 @@ def single_tb_analysis(file_path, analysis_info, plot_settings):
         'N Elements': [len(df['Element'].unique())],
         'N Nodes':  [len(df['Node'].unique())]
     }
+    
     return minfo, data
 
-def single_out_analysis(file_path,minfo, **kwargs):
+def single_out_analysis(file_path, minfo, **kwargs):
+    """
+    Perform analysis on a given file and save the resulting figures.
+    Parameters:
+    - file_path (str): The path to the file to be analyzed.
+    - minfo (dict): A dictionary containing model information.
+    - **kwargs: Additional keyword arguments.
+    Returns:
+    - None
+    Raises:
+    - None
+    """
     
     directory = os.path.dirname(file_path)
     analysis_dir = os.path.join(directory, 'analysis/convergence')

@@ -1,20 +1,7 @@
-import io
-import os
-import torch
+# ---------------------------------------------------------------------------- #
+#                                 Optimisation                                 #
+# ---------------------------------------------------------------------------- #
 
-from botorch.models import SingleTaskGP
-from botorch.fit import fit_gpytorch_mll
-from gpytorch.mlls import ExactMarginalLogLikelihood
-from botorch.acquisition import LogExpectedImprovement
-from botorch.optim import optimize_acqf
-
-## Gradient based optimization according to the Simplex-method
-def pure_minimization(wall_instance, bounds):
-    initial_guess = np.mean(bounds, axis=1)
-    result = minimize(wall_instance.objective_function, initial_guess, method='Nelder-Mead', bounds=bounds)
-    return result.x, result.fun
-
-## BOPT for single task optimization
 def SingleBOPT(Y_init_single, X_init_single, n_iter, batch_size, bounds, Nrestarts, objective_function, wall_instance):
     gp_save_dir = os.path.join(os.path.dirname(wall_instance.config['model_directory']), 'GP_models')
     os.makedirs(gp_save_dir, exist_ok=True)
