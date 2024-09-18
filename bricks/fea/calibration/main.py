@@ -7,7 +7,35 @@
 # This script also requires to modify the output type to read the process_tb function. Please see FEA readme documentation to set this properly
 # As well model parameters need to be set manually i.e name of load case and load steps as well as material names
 
+## Imports 
+import io
 import os
+import shutil
+import traceback
+import numpy as np
+import pandas as pd
+import torch
+import time
+import pickle
+import itertools
+
+from scipy.spatial import distance_matrix
+from scipy.sparse.csgraph import connected_components, shortest_path
+from scipy.sparse import csr_matrix
+from scipy.stats import norm
+
+from botorch.utils.transforms import normalize
+from botorch.utils.transforms import unnormalize
+from botorch.models.transforms import Standardize
+from botorch.models import SingleTaskGP, MultiTaskGP
+from botorch.fit import fit_gpytorch_mll
+from gpytorch.mlls import ExactMarginalLogLikelihood
+from botorch.acquisition import LogExpectedImprovement
+from botorch.optim import optimize_acqf
+
+from tabulate import tabulate
+from contextlib import redirect_stdout
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 def combine_scripts(output_directory, output_filename="combined_script.py", **user_params):
     """
@@ -19,38 +47,29 @@ def combine_scripts(output_directory, output_filename="combined_script.py", **us
         output_filename (str): The name of the output file (default is 'combined_script.py').
         user_params (dict): Dictionary of user-defined parameters to insert into the initiate script.
     """
-    # List of script filenames in the order they should be combined
     script_order = ["imports.py", "utils.py", "material.py", "wall.py", "optimize.py", "initiate.py"]
 
-    # Initialize an empty string to hold the combined script content
     combined_content = ""
 
-    # Loop through each script in the specified order
     for script in script_order:
-        # Define the full path to the script file
         script_path = os.path.join(os.path.dirname(__file__), script)
         
         # Read the content of the script
         with open(script_path, 'r') as file:
             script_content = file.read()
 
-            # If we're processing the 'initiate.py' script, insert user_params at the beginning
             if script == "initiate.py":
                 user_params_content = generate_user_params_section(**user_params)
                 script_content = user_params_content + "\n\n" + script_content
 
-            # Append the script content to the combined content
             combined_content += f"# ---- {script} ----\n\n"
             combined_content += script_content + "\n\n"
 
-    # Ensure the output directory exists
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
 
-    # Define the full path for the output file
     output_path = os.path.join(output_directory, output_filename)
 
-    # Write the combined content to the output file
     with open(output_path, 'w') as output_file:
         output_file.write(combined_content)
 
@@ -75,9 +94,3 @@ def generate_user_params_section(**user_params):
             params_section += f"{param} = {value}\n"
     
     return params_section
-
-
-# New Warm-start the optimization
-n_iter_new = n_iter + n_samples - len(WALL2.state["monitor_df"]["Total Loss"])
-X_init_multi, Y_init_multi = WALL2.warm_start(n_iter_new, batch_size, bounds, Nrestarts)
-

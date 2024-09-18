@@ -1,9 +1,35 @@
-def read_file(filepath):
-    with open(filepath, "r") as file:
-        lines = file.readlines()
-    return lines
+import re
+import numpy as np
+import pandas as pd
+from scipy.spatial import distance_matrix
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import connected_components
 
-def parse_lines(lines):
+def read_file(filepath: str) -> list:
+    """
+    Read the contents of a file and return its lines.
+
+    Args:
+        filepath (str): The path to the file to be read.
+
+    Returns:
+        list: A list of strings, where each string is a line from the file.
+    """
+    with open(filepath, "r") as file:
+        return file.readlines()
+
+def parse_lines(lines: list) -> tuple:
+    """
+    Parse the lines from a DIANA output file and extract iteration information.
+
+    Args:
+        lines (list): A list of strings, each representing a line from the file.
+
+    Returns:
+        tuple: A tuple containing two elements:
+            - dict: A dictionary with phase information and iteration data.
+            - list: A list of step numbers that did not converge.
+    """
     Iterations = {}
     NoConvergenceSteps = []
     CurrentStepIndex = 0
@@ -119,20 +145,19 @@ def parse_lines(lines):
 
     return Iterations, NoConvergenceSteps
 
-def process_tb_chunk(file_path, chunk_size=100000):
+def process_tb_chunk(file_path: str, chunk_size: int = 100000) -> pd.DataFrame:
     """
-    Process a tabulated file and return a pandas DataFrame.
+    Process a tabulated file in chunks and return a pandas DataFrame.
 
     Args:
         file_path (str): The path to the tabulated file.
-        chunk_size (int): Number of lines to process at a time.
+        chunk_size (int): Number of lines to process at a time. Default is 100000.
 
     Returns:
-        pandas.DataFrame: The processed data as a DataFrame.
+        pd.DataFrame: The processed data as a DataFrame.
 
     Raises:
         Exception: If an error occurs during processing.
-
     """
     data_list = []
     info = {}
@@ -265,7 +290,7 @@ def process_tb_chunk(file_path, chunk_size=100000):
     if data_list:
         yield pd.DataFrame(data_list)
 
-def process_data_row(data_string):
+def process_data_row(data_string: str) -> list:
     """
     Process a data row string and convert it into a list of floating-point values.
 
@@ -274,106 +299,94 @@ def process_data_row(data_string):
 
     Returns:
         list: A list of floating-point values extracted from the data string.
-
-    Raises:
-        ValueError: If the string cannot be converted to a float.
-
     """
-    count = 0
-    values = []
+    return [float(data_string[i:i+10].strip() or np.nan) for i in range(0, len(data_string), 11)]
 
-    while count < len(data_string):
-        string = data_string[count:count+10]
-        string = string.strip()
-        if string:
-            try:
-                value = float(string)
-            except ValueError as e:
-                print(f"Error converting string to float: {string} - {e}")
-                value = np.nan
-        else:
-            value = np.nan
-        values.append(value)
-        count += 11  # Move past the 10 spaces and the character after it
+def process_tb(file_path: str) -> pd.DataFrame:
+    """
+    Process the entire tabulated file and return a consolidated DataFrame.
 
-    return values
+    Args:
+        file_path (str): The path to the tabulated file.
 
-def process_tb(file_path):
-    dfs = []
-    for chunk_df in process_tb_chunk(file_path):  # Call the correct function
-        dfs.append(chunk_df)
-    final_df = pd.concat(dfs, ignore_index=True)
-    return final_df
+    Returns:
+        pd.DataFrame: The final processed data as a DataFrame.
+    """
+    return pd.concat(process_tb_chunk(file_path) for _ in iter(int, 1))
 
-def find_connected_components(dist_matrix, d_threshold):
-    """Finds connected components based on a distance threshold."""
+def find_connected_components(dist_matrix: np.ndarray, d_threshold: float) -> tuple:
+    """
+    Find connected components based on a distance threshold.
+
+    Args:
+        dist_matrix (np.ndarray): Distance matrix between points.
+        d_threshold (float): Distance threshold for connectivity.
+
+    Returns:
+        tuple: Number of components and labels for each point.
+    """
     connectivity = dist_matrix <= d_threshold
     connectivity_sparse = csr_matrix(connectivity)
-    n_components, labels = connected_components(csgraph=connectivity_sparse, directed=False)
-    return n_components, labels
+    return connected_components(csgraph=connectivity_sparse, directed=False)
 
-def calculate_crack_properties(df_filtered, n_components):
-    """Calculates the crack width and length for each component."""
-    
+def calculate_crack_properties(df_filtered: pd.DataFrame, n_components: int) -> dict:
+    """
+    Calculate the crack width and length for each component.
+
+    Args:
+        df_filtered (pd.DataFrame): Filtered DataFrame containing crack data.
+        n_components (int): Number of connected components.
+
+    Returns:
+        dict: A dictionary containing properties of each crack.
+    """
     cracks = {}
-
     for component in range(n_components):
         component_points = df_filtered[df_filtered['Component'] == component][['X0', 'Y0']].values
         component_elements = df_filtered[df_filtered['Component'] == component]['Element'].unique()
         
-        if component_points.shape[0] > 1:
-            component_dist_matrix = distance_matrix(component_points, component_points)
-            max_distance = np.max(component_dist_matrix)
-            crack_length = max_distance
-        else:
-            crack_length = 0
+        crack_length = np.max(distance_matrix(component_points, component_points)) if component_points.shape[0] > 1 else 0
         average_crack_width = df_filtered[df_filtered['Component'] == component]['Ecw1'].mean()
         
-        crack_info = {f'Crack {component}': {'length': crack_length,
-                                            'average_width': average_crack_width,
-                                            'component': component,
-                                            'elements': component_elements.tolist(),  # Convert to list for JSON serialization compatibility
-                                            }}
-        cracks.update(crack_info)
+        cracks[f'Crack {component}'] = {
+            'length': crack_length,
+            'average_width': average_crack_width,
+            'component': component,
+            'elements': component_elements.tolist(),
+        }
             
     return cracks
 
-def analyze_cracks(df_filtered, d_threshold):
-    """Main function to analyze cracks in the data."""
+def analyze_cracks(df_filtered: pd.DataFrame, d_threshold: float) -> dict:
+    """
+    Analyze cracks in the data.
+
+    Args:
+        df_filtered (pd.DataFrame): Filtered DataFrame containing crack data.
+        d_threshold (float): Distance threshold for connectivity.
+
+    Returns:
+        dict: A dictionary containing properties of all cracks.
+    """
     points = df_filtered[['X0', 'Y0']].values
     dist_matrix = distance_matrix(points, points)
     n_components, labels = find_connected_components(dist_matrix, d_threshold)
     df_filtered['Component'] = labels
-    cracks = calculate_crack_properties(df_filtered, n_components)
-    
-    return cracks
+    return calculate_crack_properties(df_filtered, n_components)
 
-def compute_damage_parameter(crack_dict) -> float:
+def compute_damage_parameter(crack_dict: dict) -> float:
     """
-    Compute the damage parameter based on the given dataframe and damage dictionary.
+    Compute the damage parameter based on the given crack dictionary.
 
-    Parameters:
-    - df: The dataframe containing the data.
-    - damage: A dictionary containing the damage information.
+    Args:
+        crack_dict (dict): A dictionary containing the crack information.
 
     Returns:
-    - The computed damage parameter.
-
+        float: The computed damage parameter.
     """
-    n_c = 0
-    c_w_n = []
-    c_w_d = []
+    n_c = len(crack_dict)
+    c_w_n = [(crack['average_width']**2 * crack['length']) for crack in crack_dict.values()]
+    c_w_d = [(crack['average_width'] * crack['length']) for crack in crack_dict.values()]
     
-    for crack in crack_dict.values():
-        n_c += 1
-        
-        c_w = crack['average_width']
-        l_c = crack['length']
-        
-        c_w_n += [c_w**2 * l_c]
-        c_w_d += [c_w * l_c]
-        
-    c_w = sum(c_w_n) / sum(c_w_d) if (len(c_w_d) != 0) and (sum(c_w_d) != 0) else 0
-    psi = 2 * n_c**0.15 * c_w**0.3
-
-    return psi
+    c_w = sum(c_w_n) / sum(c_w_d) if c_w_d and sum(c_w_d) != 0 else 0
+    return 2 * n_c**0.15 * c_w**0.3
