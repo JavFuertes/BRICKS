@@ -6,29 +6,20 @@ from diana import *
 file_name = r'$file_path'
 path_exp = r'$plots_folder'
 
-# Analysis and load cases
 an = "$analysis"
 lc = $load_cases
 ls = $load_steps
 lfis = $load_factors_init
 snapshots = $snapshots
-
 steps = $steps
 load_factors = $load_factors
 
-# Define View setting in case it doesn't exist
-try:
-    addViewSetting("PY")
-    setActiveViewSetting("PY")
-    saveViewPoint("plot_vp", $view_point)
-    setViewPoint("plot_vp")
-except Exception as e:
-    print(f'View Setting already exists: {e}')
+addViewSetting("PY")
+setActiveViewSetting("PY")
+saveViewPoint("plot_vp", $view_point)
+setViewPoint("plot_vp")
 
-# Iterate through results and steps
 for result in $results_str:
-
-    # Individual screenshots
     for i, step in enumerate($steps):
         step_name = f"Load-step {step}"
         lf = $load_factors[i]
@@ -55,7 +46,7 @@ for result in $results_str:
         setViewSettingValue("PY", "RESULT/LEGEND/FONT/FAMILY", "ARIAL")
         setViewSettingValue("PY", "RESULT/LEGEND/FONT/SIZE", $legend_font_size)
         setViewSettingValue("PY", "RESULT/LEGEND/ANNOTA", "RELFRQ")
-        setViewSettingValue("PY", "RESULT/LEGEND/ANNFNT/SIZE", $annotation_font_size)
+        setViewSettingValue("PY", "RESULT/LEGEND/ANNFNT/SIZE", view_settings['legend_font_size'])
         setViewSettingValue("PY", "RESULT/LEGEND/FONT/COLOR", [31, 30, 29, 255])
         setViewSettingValue("PY", "RESULT/LEGEND/ANNFNT/COLOR", [68, 68, 68, 255])
         setViewSettingValue("PY", "RESULT/LEGEND/BORDER/BACK", False)

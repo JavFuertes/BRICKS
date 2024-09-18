@@ -61,7 +61,6 @@ def analyze_cracks(df_filtered, d_threshold):
     n_components, labels = find_connected_components(dist_matrix, d_threshold)
     df_filtered['Component'] = labels
     cracks = calculate_crack_properties(df_filtered, n_components)
-    
     return cracks
 
 def compute_damage_parameter(crack_dict) -> float:
@@ -94,7 +93,6 @@ def compute_damage_parameter(crack_dict) -> float:
     return psi
 
 def eval_dl(psi):
-    
     psi_thresholds = [1,1.5,2.5,3.5,float('inf')]
     dl = [0,1,2,3,4]
     for i,threshold in enumerate(psi_thresholds):

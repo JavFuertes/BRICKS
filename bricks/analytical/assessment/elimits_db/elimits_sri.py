@@ -10,14 +10,14 @@ class LimitEntry:
 
 @dataclass
 class ParameterLimits:
-    beta: List[LimitEntry] = field(default_factory=list)
+    Beta: List[LimitEntry] = field(default_factory=list)
     ΔSmax: List[LimitEntry] = field(default_factory=list)
-    phi: List[LimitEntry] = field(default_factory=list)
-    omega: List[LimitEntry] = field(default_factory=list)
+    Phi: List[LimitEntry] = field(default_factory=list)
+    Omega: List[LimitEntry] = field(default_factory=list)
 
 def empirical_limits() -> ParameterLimits:
     return ParameterLimits(
-        beta=[
+        Beta=[
             LimitEntry(
                 source='Boscardin & Cording (1989)',
                 limits=[0, 1e-3, 1.5e-3, 3.25e-3, 6.5e-3, float('inf')],
@@ -75,7 +75,7 @@ def empirical_limits() -> ParameterLimits:
                 DL=[0, 1]
             ),
         ],
-        phi=[
+        Phi=[
             LimitEntry(
                 source="CUR (1996)",
                 limits=[0, 2e-3, 3.3e-3, 10e-3, float('inf')],
@@ -83,7 +83,7 @@ def empirical_limits() -> ParameterLimits:
                 DL=[0, 1, 3, 4, 5]
             ),
         ],
-        omega=[
+        Omega=[
             LimitEntry(
                 source="IGWR (2009)",
                 limits=[0, 1/66, 1/50, 1/33, float('inf')],

@@ -76,3 +76,8 @@ def generate_user_params_section(**user_params):
     
     return params_section
 
+
+# New Warm-start the optimization
+n_iter_new = n_iter + n_samples - len(WALL2.state["monitor_df"]["Total Loss"])
+X_init_multi, Y_init_multi = WALL2.warm_start(n_iter_new, batch_size, bounds, Nrestarts)
+

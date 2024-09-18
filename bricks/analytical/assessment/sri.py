@@ -287,9 +287,9 @@ def compute_sri(house, wall_num, key, tolerance = 0.05):
             'ΔSmax': abs(s_vmax),
             'DefRat': abs(s_vmax)/length,
             'dDef': abs(d_deflection),
-            'omega': abs(omega),
-            'phi': abs(phi),
-            'beta': abs(beta)}
+            'Omega': abs(omega),
+            'Phi': abs(phi),
+            'Beta': abs(beta)}
     
     return sri, infl_dict_
 

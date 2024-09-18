@@ -259,7 +259,7 @@ def subsidence(OBJECT, building = False, soil = False, deformation = False):
             yaxis_title='Y [m]',
             zaxis_title='Z [mm]',
             aspectmode="manual",
-            aspectratio=dict(x=1*2, y=y_rat*3, z=z_rat*0.8)
+            aspectratio=dict(x=1, y=y_rat, z=z_rat*0.25)
         ),
         coloraxis_colorbar=dict(
             title='Disp Uz [mm]', 

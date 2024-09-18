@@ -3,9 +3,41 @@ from dash import Dash, dcc, html
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from plotly.colors import get_colorscale
-
 from ..utils import prepare_report, compute_param, get_color_from_scale
-from .em_plot import apply_opacity_to_colorscale
+from matplotlib import cm
+
+def get_colors_from_cmap(cmap_name, num_colors, opacity=0.7):  # Opacity for transparency
+    """
+    Get a list of rgba colors from a colormap with a specified number of colors and opacity.
+    """
+    cmap = cm.get_cmap(cmap_name, num_colors)
+    colors = []
+    for i in range(cmap.N):
+        r, g, b, _ = cmap(i)
+        colors.append(f'rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, {opacity})')
+    return colors
+
+def discrete_colorscale(bvals, colors):
+    if len(bvals) != len(colors) + 1:
+        raise ValueError('len(boundary values) should be equal to len(colors) + 1')
+    
+    bvals = sorted(bvals)
+    nvals = [(v - bvals[0]) / (bvals[-1] - bvals[0]) for v in bvals]  # Normalize the boundaries
+
+    dcolorscale = []
+    for k in range(len(colors)):
+        dcolorscale.extend([[nvals[k], colors[k]], [nvals[k + 1], colors[k]]])
+    
+    return dcolorscale
+
+# Set up boundary values and colors
+bvals = [-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]
+colors = get_colors_from_cmap('RdYlGn_r', len(bvals) - 1, opacity=0.7)
+dcolorsc = discrete_colorscale(bvals, colors)
+
+# Calculate tick values and labels
+tickvals = [np.mean(bvals[k:k+2]) for k in range(len(bvals) - 1)]
+ticktext = ['DL0', 'DL1', 'DL2', 'DL3', 'DL4', 'DL5']
 
 def LTSM_plot(object):
     house = object.house
@@ -73,7 +105,7 @@ def LTSM_plot(object):
                     fig.add_trace(go.Scatter(x=x,
                                             y=w,
                                             mode='lines',
-                                            name='Gaussian profile approximation'),
+                                            name='Gaussian profile <br>approximation'),
                                 row=2, col=1)
                     
                     for z in [-xinflection, xinflection]:
@@ -109,10 +141,8 @@ def LTSM_plot(object):
                     comments = description_annotations[0]
                     assessments = data_matrix.flatten()
                     
-                    colorscale = 'RdYlGn_r'
-                    colors = get_colorscale(colorscale)
                     dlmax = 5
-                    color_matrix = [get_color_from_scale(damage, colors, dlmax) for damage in assessments]
+                    color_matrix = [get_color_from_scale(damage, dcolorsc, dlmax) for damage in assessments]
                     segment_width = (xi - xj) / len(assessments)
 
                     for i, (color, assess_i, comment, source) in enumerate(zip(color_matrix, assessments, comments, sources)):
@@ -122,7 +152,7 @@ def LTSM_plot(object):
                             y0=0,
                             x1=(i + 1) * segment_width,
                             y1=h,
-                            fillcolor=color[1],
+                            fillcolor=color[1],  # Using the rgba color with transparency
                             opacity=0.7,
                             line=dict(width=0),
                             row=1, col=1
@@ -165,7 +195,7 @@ def LTSM_plot(object):
                 dl = assessments.max()
 
                 fig.update_layout(
-                            title= f'LTSM {wall} | E/G = {eg:.1f}   ε_tot = {strain:.2e}   ψ = {psi:.2f}   DL = {dl:.0f}',
+                            title= f'{wall} | E/G = {eg:.1f}   ε_tot = {strain:.2e} | DL = {dl:.0f}',
                             legend=dict(traceorder="normal"),
                             template='plotly_white'
                         )
@@ -191,15 +221,21 @@ def LTSM_plot(object):
                     y=[None],
                     mode='markers',
                     marker=dict(
-                        colorscale='RdYlGn_r',
+                        colorscale=dcolorsc,  # Using the discrete color scale
                         cmin=0,
                         cmax=5,
                         colorbar=dict(
-                            title="DL-Damage Level<br>(per assessment)",
-                            titleside="right",
-                            len=0.6,
-                            yanchor="bottom",
-                            y=0,
+                            thickness=25,
+                            tickvals=[0, 1, 2, 3, 4, 5],  # Ensure that all damage levels (0-5) are present
+                            ticktext=['DL0', 'DL1', 'DL2', 'DL3', 'DL4', 'DL5'],  # Corresponding text for each damage level
+                            title=dict(
+                                text='Damage Level<br>(per assessment)',
+                                font=dict(size=14),
+                                side='right'
+                            ),
+                            len=0.6,  
+                            yanchor='bottom',
+                            y = 0,
                         )
                     ),
                     showlegend=False
@@ -218,6 +254,7 @@ def LTSM_plot(object):
     ])
 
     return app
+
 
 
 

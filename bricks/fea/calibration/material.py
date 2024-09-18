@@ -1,7 +1,3 @@
-# ---------------------------------------------------------------------------- #
-#                                   Database                                   #
-# ---------------------------------------------------------------------------- #
-
 class MaterialParameters:
     def __init__(self):
         # Initialize material parameters with their mean and standard deviation
@@ -111,3 +107,23 @@ class MaterialParameters:
         Gft_m = 0.025 * (fm / 10) ** 0.7  # N/mm
         GfII = 10 * Gft_m  # N/mm
         return GfII
+
+
+# ----------------------------------- Main ----------------------------------- #
+material_params = MaterialParameters()
+confidence_level = 99
+
+# Define parameter bounds
+Ey_bounds = material_params.get_bounds('Emy', confidence_level)
+Ex_bounds = material_params.get_bounds('Emx', confidence_level)
+G_bounds = material_params.get_bounds('G', confidence_level)
+
+fw_bounds = material_params.get_bounds('fw', confidence_level)
+tensile_strength_bounds = tuple([material_params.tensile_strength(value) for value in fw_bounds])
+tensile_fracture_energy_bounds = tuple([material_params.tensile_fracture_energy(value, 'mortar') for value in fw_bounds])
+
+cohesion_bounds = material_params.get_bounds('fx2', confidence_level)
+friction_angle_bounds = material_params.get_bounds('fx3', confidence_level)
+shear_fracture_energy_bounds = tuple([material_params.shear_fracture_energy(value) for value in fw_bounds])
+
+bounds = [Ey_bounds, Ex_bounds, G_bounds, tensile_strength_bounds, tensile_fracture_energy_bounds, cohesion_bounds, friction_angle_bounds, shear_fracture_energy_bounds]

@@ -6,49 +6,6 @@ import scienceplots
 
 plt.style.use(['science', 'ieee'])
 
-# plt.rcParams.update({
-#     'figure.figsize': (5, 3),
-#     'figure.dpi': 600,
-#     'figure.autolayout': True,
-    
-#     # Font Settings
-#     'font.size': 8,
-#     'font.family': 'sans-serif',
-#     'font.serif': ['Arial'],  
-    
-#     # Color Line Style Settings
-#     'lines.linewidth': 0.5,
-#     'lines.markersize': 2,
-#     'lines.markeredgewidth': 0.5,
-#     'axes.labelweight': 'semibold',
-#     'axes.labelcolor': '#333333',
-#     'xtick.labelcolor': '#333333',
-#     'ytick.labelcolor': '#333333',
-#     'axes.titlecolor': '#333333',
-    
-#     # Grid and Ticks
-#     'axes.grid': False,
-#     'xtick.direction': 'in',
-#     'ytick.direction': 'in',
-#     'xtick.minor.size': 0,
-#     'ytick.minor.size': 0,
-    
-#     # Legend Settings
-#     'legend.frameon': False,
-#     'legend.framealpha': 0.7,
-#     'legend.fancybox': False,
-#     'legend.numpoints': 1,
-    
-#     # Saving Figures
-#     'savefig.bbox': 'tight',
-#     'savefig.pad_inches': 0.05,
-    
-#     # LaTeX Settings 
-#     'text.usetex': True,
-#     #'text.latex.preamble': r'\usepackage{amsmath} \usepackage{amssymb} \usepackage{sfmath}',
-#     'mathtext.fontset': 'dejavusans',
-# })
-
 plt.rcParams.update({
     'text.usetex': True,
     'font.family': 'sans-serif',  

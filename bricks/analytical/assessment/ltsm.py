@@ -125,6 +125,7 @@ def e_hog(dl_h,lh_h,eg_rat):
 def e_sag(dl_s,lh_s,eg_rat):
     e_bending_sagg = dl_s * (6 * lh_s / (lh_s ** 2 + 2 * eg_rat))
     e_shear_sagg = dl_s * (3 * lh_s / (2 * lh_s ** 2 + 2 * 1.2 * eg_rat))
+
     return e_bending_sagg, e_shear_sagg
 
 def e_total(e_bending_sagg, e_bending_hogg, e_shear_sagg, e_shear_hogg, e_horizontal):

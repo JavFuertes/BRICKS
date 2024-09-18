@@ -17,7 +17,8 @@ from scipy.stats import norm
 
 from botorch.utils.transforms import normalize
 from botorch.utils.transforms import unnormalize
-from botorch.models import SingleTaskGP
+from botorch.models.transforms import Standardize
+from botorch.models import SingleTaskGP, MultiTaskGP
 from botorch.fit import fit_gpytorch_mll
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from botorch.acquisition import LogExpectedImprovement

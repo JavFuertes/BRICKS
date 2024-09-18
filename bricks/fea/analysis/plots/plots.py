@@ -156,8 +156,9 @@ def plot_analysis(data, analysis_info, plot_settings):
             vals = np.linspace(0,max_,10) #Plot equality
             ax.plot(vals,vals, linestyle=':', label = 'Equality')
             
-            path = r'C:\Users\javie\OneDrive - Delft University of Technology\Year 2\Q3 & Q4\CIEM0500 - MS Thesis Project\!content\Experimentation\!Ijsselsteinseweg\bricks\fea\analysis\plots\deform.png'
-            add_image_to_plot(ax, path, zoom = 0.15)
+            # path = r'C:\Users\javie\OneDrive - Delft University of Technology\Year 2\Q3 & Q4\CIEM0500 - MS Thesis Project\!content\Experimentation\!Ijsselsteinseweg\bricks\fea\analysis\plots\deform.png'
+            # path = r'C:\Users\fuertesguadarramaj\OneDrive - Delft University of Technology\Year 2\Q3 & Q4\CIEM0500 - MS Thesis Project\!content\Experimentation\!Ijsselsteinseweg\bricks\fea\analysis\plots\deform.png'
+            # add_image_to_plot(ax, path, zoom = 0.15)
 
         plot_traces(ax, data, plot_settings, plot_key)
 
@@ -211,8 +212,8 @@ def plot_combined(plot_data_list, plot_key):
         vals = np.linspace(0, max_, 10)  # Plot equality
         ax.plot(vals, vals, linestyle=':', label='Equality')
 
-        path = r'C:\Users\javie\OneDrive - Delft University of Technology\Year 2\Q3 & Q4\CIEM0500 - MS Thesis Project\!content\Experimentation\!Ijsselsteinseweg\bricks\fea\analysis\plots\deform.png'
-        add_image_to_plot(ax, path)                   
+        # path = r'C:\Users\javie\OneDrive - Delft University of Technology\Year 2\Q3 & Q4\CIEM0500 - MS Thesis Project\!content\Experimentation\!Ijsselsteinseweg\bricks\fea\analysis\plots\deform.png'
+        # add_image_to_plot(ax, path)                   
 
     if 'Damage' in plot_key:
         add_shaded_areas_psi(ax, max_psi)

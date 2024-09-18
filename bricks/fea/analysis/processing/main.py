@@ -52,6 +52,7 @@ def analyse_tabulated(df, analysis_info):
                     crack_dict = analyze_cracks(df_filtered, d_threshold)
                     psi = compute_damage_parameter(crack_dict)
                     temp.append({'step': step, 'psi': psi})
+                print(crack_dict)
                 vals.append(pd.DataFrame(temp))
 
             if not analysis_info[analysis]['parameters']['auto']:
@@ -77,19 +78,24 @@ def single_tb_analysis(file_path, analysis_info, plot_settings):
             - data (dict): The analyzed data.
 
     """
+    file_path = os.path.normpath(file_path)
+    
     directory = os.path.dirname(file_path)
-    analysis_dir = os.path.join(directory, 'analysis/results')
-    os.makedirs(analysis_dir, exist_ok=True)
-
-    # Perform the analysis
+    analysis_dir = os.path.join(directory, 'analysis', 'results') 
+    
+    try:
+        os.makedirs(analysis_dir, exist_ok=True)
+    except Exception as e:
+        raise RuntimeError(f"Failed to create directory {analysis_dir}: {e}")
+    
     df = process_tb(file_path)
     data = analyse_tabulated(df, analysis_info)
     figures, titles = plot_analysis(data, analysis_info, plot_settings)
 
-    for i, fig in enumerate(figures, start=1): # Save the figures
+    for i, fig in enumerate(figures, start=1):
         fig_path = os.path.join(analysis_dir, f'{titles[i-1]}.png')
         if os.path.exists(fig_path):
-            os.remove(fig_path)  # remove the file if it already exists
+            os.remove(fig_path)  
         fig.savefig(fig_path)
         close()
         
