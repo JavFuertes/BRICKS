@@ -1,8 +1,25 @@
+import os
 import traceback
 import pandas as pd
 import numpy as np
 
-def process_tb_chunk(file_path, chunk_size=100000):
+from ..plots.plots import plot_analysis
+
+def process_tb(file_path):
+    dfs = []
+    for chunk_df in process_tb_chunk(file_path):
+        for col in chunk_df.select_dtypes(include=['float64']).columns:
+            chunk_df[col] = chunk_df[col].astype(np.float32)
+        for col in chunk_df.select_dtypes(include=['int64']).columns:
+            chunk_df[col] = chunk_df[col].astype(np.int32)
+        
+        dfs.append(chunk_df)
+    
+    final_df = pd.concat(dfs, ignore_index=True)
+    
+    return final_df
+
+def process_tb_chunk(file_path, chunk_size=500000):
     """
     Process a tabulated file and return a pandas DataFrame.
 
@@ -149,6 +166,7 @@ def process_tb_chunk(file_path, chunk_size=100000):
         yield pd.DataFrame(data_list)
 
 def process_data_row(data_string):
+
     """
     Process a data row string and convert it into a list of floating-point values.
 
@@ -180,10 +198,3 @@ def process_data_row(data_string):
         count += 11  # Move past the 10 spaces and the character after it
 
     return values
-
-def process_tb(file_path):
-    dfs = []
-    for chunk_df in process_tb_chunk(file_path):  # Call the correct function
-        dfs.append(chunk_df)
-    final_df = pd.concat(dfs, ignore_index=True)
-    return final_df

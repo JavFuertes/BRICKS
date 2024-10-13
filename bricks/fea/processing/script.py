@@ -11,31 +11,6 @@ with open(script_path, 'r') as file:
     script_content = file.read()
 
 #%% Functions
-def setup_analysis(base_path, config):
-    """
-    Setup analysis folders and generate scripts.
-
-    Args:
-        base_path (str): The base directory path to search for files.
-        config (dict): Configuration dictionary containing results and script settings.
-    """
-    for root, dirs, files in os.walk(base_path):
-        for file in files:
-            if file.endswith('.dnb'):
-                analysis_folder = os.path.join(root, 'analysis')
-                plots_folder = os.path.join(analysis_folder, 'plots')
-
-                os.makedirs(analysis_folder, exist_ok=True)
-                os.makedirs(plots_folder, exist_ok=True)
-
-                for result in config['results']:
-                    component_name = result['component']
-                    result_folder = os.path.join(plots_folder, component_name)
-                    os.makedirs(result_folder, exist_ok=True)
-                
-                file_path = os.path.join(root, file)
-                generate_scripts(file_path, plots_folder, config['results'], config['script'])
-
 def generate_scripts(file_path, plots_folder, results, script_config):
     """
     Generate Python scripts for analysis based on results.

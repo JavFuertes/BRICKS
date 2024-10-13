@@ -1,9 +1,11 @@
 import os
 
-from .processing.main import *
-from .plots.plots import plot_combined
+from .tabulated import *
+from .out import *
+from ..processing.script import generate_scripts
+from ..plots.plots import plot_combined
 
-def analyse_models(modelling_directory, analysis_info=None, plot_settings=None, **kwargs):
+def analyse_models(modelling_directory, **kwargs):
     
     """
     Analyzes model files in the specified directory by first processing `.tb` files
@@ -46,8 +48,8 @@ def analyse_models(modelling_directory, analysis_info=None, plot_settings=None, 
 
     tb_files = []
     out_files = []
-    data_l = []
-    # Separate .tb .out files
+
+    # Separate .tb and .out files
     for root, _, files in os.walk(modelling_directory):
         for file in files:
             file_path = os.path.join(root, file)
@@ -56,30 +58,31 @@ def analyse_models(modelling_directory, analysis_info=None, plot_settings=None, 
             elif file.endswith('.out'):
                 out_files.append(file_path)
 
-    # Process .tb files first
     for file_path in tb_files:
         try:
-            minfo, data = single_tb_analysis(file_path, analysis_info, plot_settings)
-            data_l.append(data)
+            analysis_info = kwargs.get('analysis_info', {})
+            plot_settings = kwargs.get('plot_settings', {})
+            minfo = single_tb_analysis(file_path, analysis_info)
         except Exception as e:
             failed_files.append(file_path)
-            print(f"Error processing file {file_path}: {e}")
+            print(f"Error processing .tb file {file_path}: {e}")
 
-    # Process .out files
     for file_path in out_files:
         try:
+            plot = kwargs.get('plot', False)
             merge = kwargs.get('merge', False)
-            single_out_analysis(file_path,minfo, merge=merge)
+
+            single_out_analysis(file_path, minfo=minfo, merge=merge)
         except Exception as e:
             failed_files.append(file_path)
-            print(f"Error processing file {file_path}: {e}")
-    
+            print(f"Error processing .out file {file_path}: {e}")
+
     if failed_files:
         print("\nThe following files could not be processed:")
         for failed_file in failed_files:
             print(failed_file)
 
-    return data_l
+    return failed_files 
 
 def compare_models(plot_data_list):
     """
@@ -93,16 +96,46 @@ def compare_models(plot_data_list):
     """
     combined_figures = {}
 
-    # Analyze data for each model in the list
     for plot_data in plot_data_list:
-        minfo, data_analysis = single_tb_analysis(plot_data['dir'], plot_data['analysis_info'], plot_data['plot_settings'])
-        plot_data['minfo'] = minfo
-        plot_data['data_analysis'] = data_analysis
+        df = process_tb(plot_data['dir'])
+        data = analyse_tabulated(df, plot_data['analysis_info'])
 
-    # Iterate over all possible analysis info keys
-    for plot_key in plot_data_list[0]['analysis_info'].keys():
+        minfo = {
+            'N Elements': [len(df['Element'].unique())],
+            'N Nodes':  [len(df['Node'].unique())]
+        }
         
+        plot_data['minfo'] = minfo
+        plot_data['data_analysis'] = data
+
+    for plot_key in plot_data_list[0]['analysis_info'].keys():
         fig = plot_combined(plot_data_list, plot_key)
+        
         combined_figures[plot_key] = fig
 
     return combined_figures
+
+def screenshot_generator(base_path, config):
+    """
+    Setup analysis folders and generate scripts.
+
+    Args:
+        base_path (str): The base directory path to search for files.
+        config (dict): Configuration dictionary containing results and script settings.
+    """
+    for root, dirs, files in os.walk(base_path):
+        for file in files:
+            if file.endswith('.dnb'):
+                analysis_folder = os.path.join(root, 'analysis')
+                plots_folder = os.path.join(analysis_folder, 'plots')
+
+                os.makedirs(analysis_folder, exist_ok=True)
+                os.makedirs(plots_folder, exist_ok=True)
+
+                for result in config['results']:
+                    component_name = result['component']
+                    result_folder = os.path.join(plots_folder, component_name)
+                    os.makedirs(result_folder, exist_ok=True)
+                
+                file_path = os.path.join(root, file)
+                generate_scripts(file_path, plots_folder, config['results'], config['script'])

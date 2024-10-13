@@ -1,0 +1,100 @@
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+
+Non-converged step number: 113
+
+No Energy convergence found
+Relative Energy variation at non-convergence: 0.006744
+

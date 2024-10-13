@@ -1,10 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from .style import *
 from .utils import *
 
-def plotconvergence(iterations, noconvergencesteps, minfo):
+def plotconvergence(iterations, nnc, **kwargs):
     """
     Plot the results of the analysis.
 
@@ -42,12 +43,15 @@ def plotconvergence(iterations, noconvergencesteps, minfo):
         "Force norm", "Displacement norm", "Energy norm"
     ]
 
+    merge = kwargs.get('merge', False)
+    minfo = kwargs.get('minfo', False)
+
     first_phase_key = next(iter(iterations))
     for item_count, (key, items) in enumerate(iterations[first_phase_key].items()):
         if not items or not isinstance(items, list):
             continue
 
-        fig, ax = plt.subplots(figsize=(5, 3))
+        fig, ax = plt.subplots(figsize=(5, 2.5))
         figures.append(fig)
         axes.append(ax)
         title = titles[item_count]
@@ -72,8 +76,8 @@ def plotconvergence(iterations, noconvergencesteps, minfo):
             
             if title == "Solver iteration steps":
                 ax.plot(
-                    [noconvergencesteps[i]/x_max for i in range(len(noconvergencesteps))],
-                    [y[i-1] for i in noconvergencesteps],
+                    [nnc[i]/x_max for i in range(len(nnc))],
+                    [y[i-1] for i in nnc],
                     linewidth=0.5, markersize=3, marker='s', markerfacecolor='none', linestyle='None',
                     label='Non-converged steps', color = 'red'
                 )
@@ -96,15 +100,31 @@ def plotconvergence(iterations, noconvergencesteps, minfo):
                 ax.legend(legend_labels, loc='best')
                 y_max = max(max(y_lim),np.max(y))
                 plt.ylim(0, y_max * 1.3)
-            ax.annotate(f"Model: {minfo['Model'][0]}\nSolution time: {minfo['Run time'][0]} [hh:mm:ss]\nNº Elements: {str(minfo['N Elements'][0])}  Nº Nodes: {str(minfo['N Nodes'][0])}",
-                    xy=(0.04, 0.96), xycoords='axes fraction',  
-                    va='top', ha='left', fontsize=8, color='black',
-                    bbox=dict(facecolor='white', edgecolor='none', alpha=0.7),
-                    annotation_clip=True  
-                )
+            
+            if minfo:
+                ax.annotate(f"Model: {minfo['Model'][0]}\nSolution time: {minfo['Run time'][0]} [hh:mm:ss]\nNº Elements: {str(minfo['N Elements'][0])}  Nº Nodes: {str(minfo['N Nodes'][0])}",
+                        xy=(0.04, 0.96), xycoords='axes fraction',  
+                        va='top', ha='left', fontsize=8, color='black',
+                        bbox=dict(facecolor='white', edgecolor='none', alpha=0.7),
+                        annotation_clip=True  
+                    )
 
         ax.set_xlabel(r'Load factor $\lambda$')
         ax.set_ylabel(ylabels[item_count])
+
+    if merge:
+        merge_titles = merge.get('Titles')
+        if merge_titles:
+            indices_to_merge = [i for i, title in enumerate(figures_titles) if title in merge_titles]
+            if indices_to_merge:
+                merged_fig = merge_plots(
+                    figures_titles, axes, indices_to_merge,
+                    merge.get('x_label', "Load factor $\lambda$"), 
+                    merge.get('y_label', "Norm values"), 
+                    merge.get('title', "Merged Plot")
+                )
+                figures.append(merged_fig)
+                figures_titles.append(merge.get('title', "Merged Plot"))
         
     return figures, figures_titles, axes
 
@@ -132,19 +152,20 @@ def plot_analysis(data, analysis_info, plot_settings):
     figures_titles = []
 
     for plot_key, info in analysis_info.items():
-        fig, ax = plt.subplots(figsize=(5, 3))
+        fig, ax = plt.subplots(figsize= plot_settings[plot_key]['figsize'] , dpi = 600)
         figures.append(fig)
         figures_titles.append(plot_settings[plot_key]['titles'])
 
-        if 'Crack' in plot_key:  # Crack width development plot
-            max_y = max([data[plot_key][i][data[plot_key][i].columns[1]].max() 
-                            for i in range(len(plot_settings[plot_key].get('traces', [])))])
-            add_shaded_areas_cw(ax, max_y)
+        if 'Crack' in plot_key:  # Crack width development plot to be added automatic functionality
+            if analysis_info[plot_key]['parameters']['auto']:
+                continue
+            else:
+                max_y = max([data[plot_key][i][data[plot_key][i].columns[1]].max() 
+                                for i in range(len(plot_settings[plot_key].get('traces', [])))])
+                add_shaded_areas_cw(ax, max_y)
 
         if 'Damage' in plot_key:  # Damage development plot
-            max_psi = 0
-            for vals in data[plot_key]:
-                max_psi = max(max_psi, vals['psi'].max())
+            max_psi = data[plot_key]['psi'].max()
             add_shaded_areas_psi(ax, max_psi)
 
         if 'Mutual' in plot_key:
@@ -156,10 +177,9 @@ def plot_analysis(data, analysis_info, plot_settings):
             vals = np.linspace(0,max_,10) #Plot equality
             ax.plot(vals,vals, linestyle=':', label = 'Equality')
             
-            # path = r'C:\Users\javie\OneDrive - Delft University of Technology\Year 2\Q3 & Q4\CIEM0500 - MS Thesis Project\!content\Experimentation\!Ijsselsteinseweg\bricks\fea\analysis\plots\deform.png'
-            # path = r'C:\Users\fuertesguadarramaj\OneDrive - Delft University of Technology\Year 2\Q3 & Q4\CIEM0500 - MS Thesis Project\!content\Experimentation\!Ijsselsteinseweg\bricks\fea\analysis\plots\deform.png'
-            # add_image_to_plot(ax, path, zoom = 0.15)
-
+            path = './fig/deform.png'
+            add_image_to_plot(ax, path, zoom = 0.15)
+        
         plot_traces(ax, data, plot_settings, plot_key)
 
     if not analysis_info:  #Individual analysis
@@ -182,8 +202,8 @@ def plot_combined(plot_data_list, plot_key):
         None
 
     """
-
-    fig, ax = plt.subplots(figsize=(5, 2.5))
+    
+    fig, ax = plt.subplots(figsize=(5.0, 2.5), dpi = 600)
     max_psi = 0
     max_y = 0
     max_ = 0
@@ -196,8 +216,7 @@ def plot_combined(plot_data_list, plot_key):
             plot_traces(ax, data, plot_settings, plot_key)
             
             if 'Damage' in plot_key:
-                for vals in data[plot_key]:
-                    max_psi = max(max_psi, vals['psi'].max())
+                max_psi = max(max_psi, data[plot_key]['psi'].max())
             
             if 'Crack' in plot_key:
                 for vals in data[plot_key]:
@@ -212,8 +231,8 @@ def plot_combined(plot_data_list, plot_key):
         vals = np.linspace(0, max_, 10)  # Plot equality
         ax.plot(vals, vals, linestyle=':', label='Equality')
 
-        # path = r'C:\Users\javie\OneDrive - Delft University of Technology\Year 2\Q3 & Q4\CIEM0500 - MS Thesis Project\!content\Experimentation\!Ijsselsteinseweg\bricks\fea\analysis\plots\deform.png'
-        # add_image_to_plot(ax, path)                   
+        path = r'C:\Users\javie\OneDrive - Delft University of Technology\Year 2\Q3 & Q4\CIEM0500 - MS Thesis Project\!content\Experimentation\!Ijsselsteinseweg\bricks\fea\analysis\plots\deform.png'
+        add_image_to_plot(ax, path)                   
 
     if 'Damage' in plot_key:
         add_shaded_areas_psi(ax, max_psi)
@@ -224,7 +243,8 @@ def plot_combined(plot_data_list, plot_key):
     ax.set_xlabel(plot_data_list[0]['plot_settings'][plot_key]['labels'][0])
     ax.set_ylabel(plot_data_list[0]['plot_settings'][plot_key]['labels'][1])
     #ax.set_title(f'Comparison of {plot_key}')
-    ax.legend()
+    ax.legend(loc='upper left')
+
     return fig
 
 def plot_traces(ax, data, plot_settings, plot_key):
@@ -237,12 +257,20 @@ def plot_traces(ax, data, plot_settings, plot_key):
     - plot_settings: The dictionary containing plot settings.
     - plot_key: The specific key in plot_settings to access settings for the current plot.
     """
-    for i, trace in enumerate(plot_settings[plot_key].get('traces', [])):
-        x_val = data[plot_key][i][data[plot_key][i].columns[0]].values
+    traces = plot_settings[plot_key].get('traces', [])
+    if isinstance(data[plot_key], pd.DataFrame): # Not indexed as multiple values or list
+        x_val = data[plot_key][data[plot_key].columns[0]].values
         if x_val.min() >= 1:  # In terms of load factor or not
             x_val = np.arange(1, len(x_val) + 1) / max(x_val)
-        y_val = data[plot_key][i][data[plot_key][i].columns[1]].values
-        ax.plot(x_val, y_val, label= trace, marker=None)
+        y_val = data[plot_key][data[plot_key].columns[1]].values
+        ax.plot(x_val, y_val, label= traces[0], marker=None)
+    else:
+        for i, trace in enumerate(plot_settings[plot_key].get('traces', [])):   
+            x_val = data[plot_key][i][data[plot_key][i].columns[0]].values
+            if x_val.min() >= 1:  # In terms of load factor or not
+                x_val = np.arange(0, len(x_val) + 1) / max(x_val)
+            y_val = data[plot_key][i][data[plot_key][i].columns[1]].values
+            ax.plot(x_val, y_val, label= trace, marker=None)
 
     if 'labels' in plot_settings[plot_key]:
         ax.set_xlabel(plot_settings[plot_key]['labels'][0])
@@ -270,7 +298,7 @@ def merge_plots(figures_titles, axes, indices_to_merge, x_label, y_label, title)
     Returns:
         merged_fig (Figure): The merged figure object.
     """
-    merged_fig, merged_ax = plt.subplots(figsize=(5, 3))
+    merged_fig, merged_ax = plt.subplots(figsize=(5, 2.5))
     
     for index in indices_to_merge:
         original_ax = axes[index]

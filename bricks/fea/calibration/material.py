@@ -9,7 +9,7 @@ class MaterialParameters:
             'fw': (0.43, 0.07),
             'fx2': (1.22, 0.11),
             'fx3': (0.76, 0.21),
-            'G': (1252, 550),
+            'G': (1252, 550 -> 200),
             'fv': (0.35, 0),
             'u': (0.67, 0)
         }
@@ -111,7 +111,7 @@ class MaterialParameters:
 
 # ----------------------------------- Main ----------------------------------- #
 material_params = MaterialParameters()
-confidence_level = 99
+confidence_level = 95
 
 # Define parameter bounds
 Ey_bounds = material_params.get_bounds('Emy', confidence_level)

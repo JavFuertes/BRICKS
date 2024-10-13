@@ -1,87 +1,29 @@
+## This script was orginally produced by TUDelft PHD candidate Y.P.(Yopi) Oktiovan Meng - Y.P.Oktiovan@tudelft.nl. 
+## His code was adapted for its use in the calibration and analysis module.
+
 import re
-import os
-import time
-from datetime import datetime
-
-import numpy as np
-from matplotlib.pyplot import close
-
-from ..plots.plots import plotconvergence, merge_plots
-
-def calculate_runtime(filename):
-        
-    start_time = end_time = None
-    pattern_start = r"/DIANA/AP/NL41\s+(\d{2}:\d{2}:\d{2})"
-    pattern_end = r"/DIANA/DC/END\s+(\d{2}:\d{2}:\d{2})"
-
-    with open(filename, 'r') as file:
-        for line in file:
-            match_start = re.search(pattern_start, line)
-            if match_start:
-                time_str = match_start.group(1)
-                start_time = datetime.strptime(time_str, "%H:%M:%S")
-            
-            match_end = re.search(pattern_end, line)
-            if match_end:
-                time_str = match_end.group(1)
-                end_time = datetime.strptime(time_str, "%H:%M:%S")
-
-    if start_time and end_time:
-        difference = end_time - start_time
-        runtime = time.strftime('%H:%M:%S', time.gmtime(difference.total_seconds()))
-    else:
-        runtime = 'NaN'
-
-    return runtime
-
-def write_to_txt(directory, data):
-    # Save some information in a txt file in the 'analysis' directory
-    info_path = os.path.join(directory, 'info.txt')
-    
-    if os.path.exists(info_path):
-        os.remove(info_path)  # remove the file if it already exists
-    
-    with open(info_path, 'w') as file:
-        model_name = data['Model'][0]
-        print(f'MODEL ANALYSIS information for model: {model_name.capitalize()}', file=file)
-        print('----------------------------------------------------------\n', file=file)
-        
-        # Write headers
-        headers = '\t'.join(data.keys())
-        print(headers, file=file)
-        
-        # Find the maximum number of rows in the data
-        max_rows = max(len(value) for value in data.values())
-        
-        # Write the data rows
-        for i in range(max_rows):
-            row = []
-            for key in data.keys():
-                if i < len(data[key]):
-                    row.append(data[key][i])
-                else:
-                    row.append('')  # Empty string if there is no value for this column
-            print('\t'.join(row), file=file)
-
-    return file
-
-def model_info(file_path,directory):
-    runtime = calculate_runtime(file_path)
-    subdirectories = directory.split(os.sep)
-    model_name = subdirectories[-1]
-
-    data = {
-        'Model': [model_name],
-        'Run time': [runtime],
-    }
-    return data
-
-def read_file(filepath):
-    with open(filepath, "r") as fileOUT:
-        lines = fileOUT.readlines()
-    return lines
 
 def parse_lines(lines):
+    """
+    Parses the given lines of text to extract iteration and convergence information.
+    Args:
+        lines (list of str): The lines of text to parse.
+    Returns:
+        tuple: A tuple containing:
+            - Iterations (dict): A dictionary where each key is a phase label and each value is another dictionary
+              containing the following keys:
+                - 'Plastic_int' (list of int): List of plastic integration points.
+                - 'Crack_points' (list of int): List of crack points.
+                - 'no_iter' (list of int): List of the number of iterations for each step.
+                - 'force_norm' (list of float): List of force norm values.
+                - 'disp_norm' (list of float): List of displacement norm values.
+                - 'energy_norm' (list of float): List of energy norm values.
+                - 'force_limit' (float): Expected force norm limit.
+                - 'disp_limit' (float): Expected displacement norm limit.
+                - 'energy_limit' (float): Expected energy norm limit.
+            - NoConvergenceSteps (list of int): List of step indices where convergence was not achieved.
+    """
+    
     Iterations = {}
     NoConvergenceSteps = []
     CurrentStepIndex = 0
@@ -197,42 +139,7 @@ def parse_lines(lines):
 
     return Iterations, NoConvergenceSteps
 
-def model_convergence(dir, minfo, merge=None):
-    """
-    This function reads a .OUT file, parses the lines, and plots the results.
-    Optionally merges specified plots.
-
-    Args:
-        dir (str): Path to the .OUT file.
-        minfo (dict): Dictionary containing model information.
-        merge (dict): Dictionary specifying plots to merge.
-
-    Returns:
-        figures (list): List of figure objects.
-    """
-    directory = os.path.dirname(dir)
-
-    lines = read_file(dir)
-    iter, ncsteps = parse_lines(lines)
     
-    figures, figures_titles, axes = plotconvergence(iter, ncsteps, minfo)
-    
-    if merge:
-        merge_titles = merge.get('Titles')
-        if merge_titles:
-            indices_to_merge = [i for i, title in enumerate(figures_titles) if title in merge_titles]
-            if indices_to_merge:
-                merged_fig = merge_plots(
-                    figures_titles, axes, indices_to_merge,
-                    merge.get('x_label', "Load factor $\lambda$"), 
-                    merge.get('y_label', "Norm values"), 
-                    merge.get('title', "Merged Plot")
-                )
-                figures.append(merged_fig)
-                figures_titles.append(merge.get('title', "Merged Plot"))
-    
-    return figures, figures_titles
-
 
 
 

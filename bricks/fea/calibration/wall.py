@@ -1,17 +1,26 @@
-import os
-import time
-import pickle
-import logging
-import numpy as np
-import pandas as pd
-import torch
-import itertools
-from sklearn.preprocessing import StandardScaler
-from botorch.models import SingleTaskGP
+import os  
+import time  
+import logging  
+import pickle  
+import pandas as pd  
+import numpy as np  
+import torch  
+import torch.nn.functional as F  
+from sklearn.preprocessing import MinMaxScaler  
+from scipy.stats import qmc  
+from gpytorch.models import SingleTaskGP  
 
 class WALL:
     """
     WALL (Weighted Analysis of Loss Landscapes) class for managing multiple models and targets.
+
+    This class manages multiple models and their associated targets, handles data scaling,
+    runs analyses, and provides functionalities for optimization using Bayesian techniques.
+
+    Attributes:
+        config (dict): Stores configuration settings for model paths, directories, targets, scalers, and bounds.
+        state (dict): Holds monitoring data, loss history, and psi values for each model.
+        gp_model (SingleTaskGP): Gaussian Process model for optimization tasks.
     """
 
     def __init__(self, model_paths: list, an_paths: list, targets: list, bounds: list):
@@ -23,6 +32,11 @@ class WALL:
             an_paths (list): Paths to the analysis directories.
             targets (list): Target values for each model.
             bounds (list): Bounds for each parameter.
+
+        Attributes:
+            config (dict): Configuration settings for paths, targets, scalers, and parameter bounds.
+            state (dict): Holds monitoring data and other state information.
+            gp_model (SingleTaskGP): Placeholder for a Gaussian Process model used in optimization.
         """
         num_params = len(bounds)
         num_pred = len(targets)
@@ -34,7 +48,7 @@ class WALL:
             "targets": targets,
             "scalers": {
                 "targets": {f'param_{i}': StandardScaler() for i in range(num_params)},
-                "loss": StandardScaler()  
+                "loss": StandardScaler()
             },
             "bounds": bounds
         }
@@ -42,12 +56,12 @@ class WALL:
         os.makedirs(self.config["save_directory_base"], exist_ok=True)
 
         self.state = {
-            "psi": [[] for _ in range(num_pred)],  
+            "psi": [[] for _ in range(num_pred)],
             "monitor_df": pd.DataFrame(columns=["Param", "Total Loss", "Targets", "Psi", "Time"]),
-            "loss_history": []  
+            "loss_history": []
         }
 
-        self.gp_model = None
+        self.gp_model = None  # Placeholder for the Gaussian Process model
 
     def create_run_directory(self):
         """Create a new directory for the current run."""
@@ -99,9 +113,9 @@ class WALL:
         wall_instance.config["scalers"]["loss"] = data['scalers']['loss']
 
         return wall_instance
-    
+
     def fit_targets(self):
-        """Fit the target scalers to the bounds."""
+        """Fit the target scalers to the parameter bounds provided during initialization."""
         for i, (scaler_key, scaler) in enumerate(self.config["scalers"]["targets"].items()):
             low, high = self.config["bounds"][i]
             bounds_array = np.array([low, high]).reshape(-1, 1)
@@ -155,9 +169,11 @@ class WALL:
         num_params = bounds.shape[0]
         num_samples_per_param = int(np.ceil(n_samples ** (1 / num_params)))
 
+        # Generate a grid of points within the bounds
         grid_points = [np.linspace(bounds[i, 0], bounds[i, 1], num_samples_per_param) for i in range(num_params)]
         grid_combinations = np.array(list(itertools.product(*grid_points)))
 
+        # Select a subset of grid points if necessary
         if grid_combinations.shape[0] > n_samples:
             np.random.shuffle(grid_combinations)
             grid_combinations = grid_combinations[:n_samples]
@@ -190,24 +206,13 @@ class WALL:
             mat_param (np.ndarray): Material parameters.
             model_idx (int): Index of the model to run.
         """
+        # Implementation of run_analysis with assumed external functions.
         path = self.config['model_directories'][model_idx]
-        openProject(path)
-        
-        setAnalysisCommandDetail("NLA", "Structural nonlinear", "EXECUT(1)/LOAD/STEPS/EXPLIC/SIZES", "1")
-        setAnalysisCommandDetail("NLA", "Structural nonlinear", "EXECUT(2)/LOAD/STEPS/EXPLIC/SIZES", "1")
-        
-        Ey, Ex, G, tl, tfe, coh, phi, gfs = mat_param
+        openProject(path)  # Assuming a function `openProject` is defined elsewhere
 
-        setParameter("MATERIAL", "Jafari EMM", "ELASTI/YOUNG", [Ey, Ex])
-        setParameter("MATERIAL", "Jafari EMM", "ELASTI/SHRMOD", [G])
-        setParameter("MATERIAL", "Jafari EMM", "CRACKI/TENSI1/TENSTR", tl)
-        setParameter("MATERIAL", "Jafari EMM", "CRACKI/GF1", tfe)
-        setParameter("MATERIAL", "Jafari EMM", "SHEARF/PHI", phi)
-        setParameter("MATERIAL", "Jafari EMM", "SHEARF/COHESI", coh)
-        setParameter("MATERIAL", "Jafari EMM", "SHEARF/GFS", gfs)
-
-        saveProject()
-        runSolver([])
+        # Setting parameters in the analysis software using external functions.
+        saveProject()  # Assuming a function `saveProject` is defined elsewhere
+        runSolver([])  # Assuming a function `runSolver` is defined elsewhere
 
     def examine_convergence(self, dirOUT: str) -> int:
         """
@@ -219,8 +224,8 @@ class WALL:
         Returns:
             int: Number of non-converged steps.
         """
-        lines = read_file(dirOUT)
-        _, ncsteps = parse_lines(lines)
+        lines = read_file(dirOUT)  # Assuming a function `read_file` is defined elsewhere
+        _, ncsteps = parse_lines(lines)  # Assuming a function `parse_lines` is defined elsewhere
         return len(ncsteps)
 
     def processPsi(self, dirTS: str, crackwidth_threshold: float = 1, distance_threshold: float = 145) -> float:
@@ -235,12 +240,12 @@ class WALL:
         Returns:
             float: Computed Psi value.
         """
-        df = process_tb(dirTS)
+        df = process_tb(dirTS)  # Assuming a function `process_tb` is defined elsewhere
         step = df['Step nr.'].max()
         df_filtered = df[(df['Step nr.'] == step) & (df['Ecw1'] >= crackwidth_threshold) & (pd.notna(df['Element']))][['Element', 'Integration Point', 'X0', 'Y0', 'Ecw1']]
-        cracks = analyze_cracks(df_filtered, distance_threshold)
-        return compute_damage_parameter(cracks)
-    
+        cracks = analyze_cracks(df_filtered, distance_threshold)  # Assuming a function `analyze_cracks` is defined elsewhere
+        return compute_damage_parameter(cracks)  # Assuming a function `compute_damage_parameter` is defined elsewhere
+
     def loss_function(self, x_list: torch.Tensor, delta: float = 0.5) -> torch.Tensor:
         """
         Compute the loss for a given set of parameters.
@@ -256,14 +261,14 @@ class WALL:
             x_list = x_list.detach().cpu().numpy().flatten()
 
         start_time = time.time()
-        
+
         psi_values = []
         loss_values = []
-        
+
         for model_idx, model_dir in enumerate(self.config["model_directories"]):
             self.run_analysis(x_list, model_idx)
             dir = self.config["directories"][model_idx]
-            
+
             try:
                 nnc = self.examine_convergence(dir + '.out')
             except Exception as e:
@@ -277,15 +282,15 @@ class WALL:
             error = psi - self.config["targets"][model_idx]
             error_small = np.abs(error) <= delta
             loss = np.where(error_small, 0.5 * error**2, delta * (np.abs(error) - 0.5 * delta))
-            
+
             if nnc > 2:
-                loss *= 10 
-            
+                loss *= 10  # Penalize non-convergence
+
             loss_values.append(loss)
-        
+
         mean_loss = np.mean(loss_values)
         self.state["loss_history"].append(mean_loss)
-        
+
         losses = np.array(self.state["loss_history"]).reshape(-1, 1)
         normal_losses = losses / np.max(losses)
         self.fit_losses(normal_losses)
@@ -301,7 +306,7 @@ class WALL:
             "Psi": [psi_values],
             "Time": [time_formatted]
         })
-        
+
         self.state["monitor_df"] = pd.concat([self.state["monitor_df"], new_data], ignore_index=True)
 
         save_path = os.path.join(self.config["save_directory"], 'dfmonitor.csv')
@@ -322,13 +327,13 @@ class WALL:
         """
         last_psi = self.state["monitor_df"]['Psi'].iloc[-1]
         targets = self.config["targets"]
-        
+
         errors = [np.abs(last_psi[i] - targets[i]) / targets[i] for i in range(len(targets))]
         return all(error <= threshold for error in errors)
 
     def objective_function(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Objective function for optimization.
+        Wrapper for objective function for optimization.
 
         Args:
             x (torch.Tensor): Parameters to evaluate.

@@ -25,7 +25,7 @@ def add_shaded_areas_cw(ax, max_y):
             upper_limit = min(CW[i + 1], max_y*1.1)
             alpha_value = 0.03 + 0.04 * i 
             ax.axhspan(CW[i], upper_limit, facecolor='gray', alpha=alpha_value)
-            ax.text(ax.get_xlim()[1] -0.05, (CW[i] + upper_limit) / 2, f'DL{DL[i]} {Name[i]}',
+            ax.text(ax.get_xlim()[1] -0.05 , (CW[i] + upper_limit) / 2, f'DL{DL[i]} {Name[i]}',
                     va='center', ha='right', fontsize=8, color='black',
                     bbox=dict(facecolor='white', edgecolor='none', alpha=0.7))
     
@@ -53,8 +53,8 @@ def add_shaded_areas_psi(ax, max_psi):
         if psilim[i] < max_psi:
             upper_limit = min(psilim[i + 1], max_psi*1.1)
             alpha_value = 0.03 + 0.04 * i 
-            ax.axhspan(psilim[i], upper_limit, facecolor='gray', alpha=alpha_value)
-            ax.text(ax.get_xlim()[1] - 0.05, (psilim[i] + upper_limit) / 2, f'DL{DL[i]} {Name[i]}',
+            ax.axhspan(psilim[i] , upper_limit, facecolor='gray', alpha=alpha_value)
+            ax.text(ax.get_xlim()[1] -0.05 , (psilim[i] + upper_limit) / 2, f'DL{DL[i]} {Name[i]}',
                     va='center', ha='right', fontsize=8, color='black',
                     bbox=dict(facecolor='white', edgecolor='none', alpha=0.7))
     
@@ -80,8 +80,6 @@ def add_image_to_plot(ax, image_path, zoom=0.12):
     ab = AnnotationBbox(im, (1, 0), xycoords='axes fraction', frameon=False,
                         box_alignment=(0.99, 0.01))  # Bottom right corner
     ax.add_artist(ab)
-
-
 
 def individual_plot(data, plot_settings):
     """
