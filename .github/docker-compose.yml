@@ -3,11 +3,10 @@ version: '3.8'
 services:
   app:
     build:
-      context: .
+      context: ..  
       dockerfile: Dockerfile  
     ports:
-      - "4321:4321"
       - "8000:8000"
     environment:
       - PORT=8000
-    command: "npm start"  
+    command: "uvicorn site.src.api.main:app --host 0.0.0.0 --port 8000"  
