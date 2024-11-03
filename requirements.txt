@@ -1,0 +1,9 @@
+# site/requirements.txt
+fastapi
+uvicorn
+plotly
+dash
+numpy
+pandas
+scikit-learn
+scipy

@@ -1,0 +1,28 @@
+---
+import { useState } from 'react';
+
+interface Props {
+  code: string;
+}
+
+const { code } = Astro.props;
+---
+<div class="code-cell">
+  <pre>{code}</pre>
+  <button id="run-code-btn">Run Code</button>
+  <div id="output"></div>
+</div>
+
+<script>
+  document.getElementById('run-code-btn').addEventListener('click', async () => {
+    const response = await fetch('/api/execute-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: `\`${code}\`` }) // Sending the code as a string
+    });
+    
+    const data = await response.json();
+    const outputElement = document.getElementById('output');
+    outputElement.innerHTML = `<strong>Output:</strong> ${data.output}`;
+  });
+</script>

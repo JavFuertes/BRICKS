@@ -1,0 +1,23 @@
+---
+import Layout from "@layouts/Layout.astro";
+import Header from "@components/Header.astro";
+import Footer from "@components/Footer.astro";
+import Breadcrumbs from "@components/Breadcrumbs.astro";
+import { SITE } from "@config";
+
+const readme = await Astro.glob('../pages/notebooks/README.md');
+const readmeContent = readme[0]; 
+---
+<Layout title={`${readmeContent.frontmatter.title} | ${SITE.title}`}>
+  <Header activeNav="posts" />  
+  <Breadcrumbs />
+  <main id="main-content">
+    <section id="about" class="prose mb-28 max-w-3xl prose-img:border-0">
+      <h1 class="text-2xl tracking-wider sm:text-3xl">
+        {readmeContent.frontmatter.title}
+      </h1>
+      <readmeContent.Content /> 
+    </section>
+  </main>
+  <Footer />
+</Layout>

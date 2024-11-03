@@ -1,0 +1,95 @@
+---
+import Layout from "@layouts/Layout.astro";
+import Header from "@components/Header.astro";
+import Footer from "@components/Footer.astro";
+import Breadcrumbs from "@components/Breadcrumbs.astro";
+const notebookContent = {
+    frontmatter: {
+        title: "Analytical Assessment",
+        description: "Analysis of subsidence-induced masonry structures."
+    }
+};
+---
+
+<Layout title={notebookContent.frontmatter.title}>
+  <Header activeNav="posts" />  
+  <Breadcrumbs />
+  
+  <main id="main-content">
+    <section>
+      <h1>{notebookContent.frontmatter.title}</h1>
+      <p>{notebookContent.frontmatter.description}</p>
+
+      <!-- Interactive Code Cell -->
+      <div class="code-cell">
+        <h2>0.1 | Define your house's dimensions and measurements</h2>
+        <textarea id="code-input" placeholder="Enter your code here..."></textarea>
+        <button onclick="executeCode()">Run Code</button>
+      </div>
+
+      <!-- Placeholders for Outputs -->
+      <h3>0.2 | Displacement Surface & Greenfield Profile</h3>
+      <div id="output-8050" class="output-placeholder"></div>
+
+      <h3>1.1 | Empirical Methods Assessment</h3>
+      <div id="output-8051" class="output-placeholder"></div>
+
+      <h3>1.2 | LTSM Assessment</h3>
+      <div id="output-8052" class="output-placeholder"></div>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>
+
+<script>
+  async function executeCode() {
+    const code = document.getElementById("code-input").value;
+    try {
+      const response = await fetch('/api/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code })
+      });
+      
+      const data = await response.json();
+
+      // Update each output container based on API response data
+      if (data.output_8050) {
+        document.getElementById("output-8050").innerText = data.output_8050;
+      }
+      if (data.output_8051) {
+        document.getElementById("output-8051").innerText = data.output_8051;
+      }
+      if (data.output_8052) {
+        document.getElementById("output-8052").innerText = data.output_8052;
+      }
+    } catch (error) {
+      console.error("Error executing code:", error);
+    }
+  }
+</script>
+
+<style>
+  .code-cell {
+    margin: 20px 0;
+  }
+
+  #code-input {
+    width: 100%;
+    height: 150px;
+    font-family: monospace;
+    font-size: 14px;
+  }
+
+  .output-placeholder {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 4px;
+    min-height: 100px;
+    font-family: monospace;
+    font-size: 14px;
+  }
+</style>
