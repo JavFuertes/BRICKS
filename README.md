@@ -8,9 +8,9 @@ Due to the Netherlands' topography and geology, many regions have weak soil resi
 
 Bricks is a module for the analysis of subsidence-affected masonry buildings. It allows the use of analytical tools and Finite Element Models analysis tools used in the analysis of subsidence-affected buildings. 
 
-| ![Masonry structure accommodating to a subsidence surface](./.github/assets/buildingdamage.svg) |
-|-------------------------------------------------------------------------------------------------|
-| **Figure:** Building damage due to accomodation due to subsidence effects                       |
+![Masonry structure accommodating to a subsidence surface](./.github/assets/buildingdamage.svg)
+
+**Figure 1:** Building damage due to subsidence effects
 
 This module is split into two submodules:
 
