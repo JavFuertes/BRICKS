@@ -43,6 +43,7 @@ export default defineConfig({
       },
     },
     server: {
+      host: '0.0.0.0',
       proxy: {
         '/api': {
           target: 'http://localhost:8000',
@@ -69,6 +70,6 @@ export default defineConfig({
   },
   server: {
     port: 4321,
-    host: true, // Allows connections from all IPs
+    host: '0.0.0.0',
   },
 });

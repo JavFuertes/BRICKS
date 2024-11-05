@@ -46,29 +46,30 @@ const notebookContent = {
   async function executeCode() {
     const code = document.getElementById("code-input").value;
     try {
-      const response = await fetch('/api/execute', {
+      const response = await fetch('http://localhost:8000/api/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: code })
+        body: JSON.stringify({ 
+          code: code,
+          cell_id: "cell-1"
+        })
       });
       
       const data = await response.json();
 
-      // Update each output container based on API response data
-      if (data.output_8050) {
-        document.getElementById("output-8050").innerText = data.output_8050;
-      }
-      if (data.output_8051) {
-        document.getElementById("output-8051").innerText = data.output_8051;
-      }
-      if (data.output_8052) {
-        document.getElementById("output-8052").innerText = data.output_8052;
+      if (data.plot_data) {
+        Plotly.newPlot("output-8050", JSON.parse(data.plot_data));
+      } else if (data.result) {
+        document.getElementById("output-8050").innerText = data.result;
       }
     } catch (error) {
       console.error("Error executing code:", error);
+      document.getElementById("output-8050").innerText = `Error: ${error.message}`;
     }
   }
 </script>
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
 <style>
   .code-cell {

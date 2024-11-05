@@ -15,7 +15,8 @@ setup(
         'plotly',
         'dash',
         'scikit-learn',
+        'scienceplots',
     ],           
-    python_requires='>=3.7',  
-    description='Package for brick wall analysis and calibration'          
+    python_requires='>=3.8',  
+    description='Tools for the assessment of masonry structures'          
 )

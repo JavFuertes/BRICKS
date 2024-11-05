@@ -1,8 +1,12 @@
 fastapi
 uvicorn
+pydantic
 plotly
 dash
 numpy
 pandas
 scikit-learn
 scipy
+python-multipart
+matplotlib
+scienceplots
