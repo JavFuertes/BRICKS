@@ -8,6 +8,7 @@ WORKDIR /app
 COPY .github/site/package*.json ./
 COPY .github/requirements.txt ./
 
+RUN ls -la
 RUN npm install
 RUN python3 -m venv venv && \
     . /app/venv/bin/activate && \
