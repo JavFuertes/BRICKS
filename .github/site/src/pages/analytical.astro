@@ -2,7 +2,10 @@
 import Layout from "@layouts/Layout.astro";
 import Header from "@components/Header.astro";
 import Footer from "@components/Footer.astro";
+
 import Breadcrumbs from "@components/Breadcrumbs.astro";
+import { SITE } from "@config";
+
 const notebookContent = {
     frontmatter: {
         title: "Analytical Assessment",
@@ -10,87 +13,173 @@ const notebookContent = {
     }
 };
 ---
-
-<Layout title={notebookContent.frontmatter.title}>
+<Layout title={`${notebookContent.frontmatter.title} | ${SITE.title}`}>
   <Header activeNav="posts" />  
-  <Breadcrumbs />
-  
+  <Breadcrumbs /> 
   <main id="main-content">
     <section>
-      <h1>{notebookContent.frontmatter.title}</h1>
-      <p>{notebookContent.frontmatter.description}</p>
+      <h1 class="!mt-0 !mb-3 text-xl font-semibold tracking-tight text-skin-base not-prose">
+        Perform your analytical Assessment
+      </h1>
+      <div class="prose">
+        <p>
+          This page provides analytical assessment tools for evaluating subsidence-induced damage in masonry structures. Using a set of <code>empirical</code> deformation limits and <code>analytical</code> methods mainly the Limit Tensile Strain Method, it helps predict a building's vulnerability to damage based on measured deformations.
+        </p>
+        
+        <p>
+          To analyze your building, you'll need to provide the following data for each wall:
+        </p>
+        
+        <ul>
+          <li><strong>3D Coordinates:</strong> (x, y, z) positions in meters/millimeters</li>
+          <li><strong>Deformation:</strong> Angular distortions (phi)</li>
+          <li><strong>Geometry:</strong> Height, thickness, total area, and opening areas</li>
+        </ul>
 
-      <!-- Interactive Code Cell -->
-      <div class="code-cell">
-        <h2>0.1 | Define your house's dimensions and measurements</h2>
-        <textarea id="code-input" placeholder="Enter your code here..."></textarea>
-        <button onclick="executeCode()">Run Code</button>
+        <p>
+          Enter your building's data in the format shown when clicking the code cell below. Ensure consistent units for accurate analysis.
+        </p>
       </div>
 
-      <!-- Placeholders for Outputs -->
-      <h3>0.2 | Displacement Surface & Greenfield Profile</h3>
-      <div id="output-8050" class="output-placeholder"></div>
-
-      <h3>1.1 | Empirical Methods Assessment</h3>
-      <div id="output-8051" class="output-placeholder"></div>
-
-      <h3>1.2 | LTSM Assessment</h3>
-      <div id="output-8052" class="output-placeholder"></div>
+      <h2 class="!mt-8 !mb-3 text-xl font-semibold tracking-tight text-skin-base">
+        0.1 | Define your house's dimensions and measurements
+      </h2>
+      
+      <div class="code-section">
+        <div id="editor"></div>
+        <div class="button-container">
+          <button id="run-code">Run Analysis</button>
+        </div>
+      </div>
+      <div id="error-display"></div>
+      <div id="plot-output" class="plot-container"></div>
     </section>
   </main>
 
   <Footer />
 </Layout>
 
-<script>
-  async function executeCode() {
-    const code = document.getElementById("code-input").value;
-    try {
-      const response = await fetch('http://localhost:8000/api/execute', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          code: code,
-          cell_id: "cell-1"
-        })
-      });
-      
-      const data = await response.json();
-
-      if (data.plot_data) {
-        Plotly.newPlot("output-8050", JSON.parse(data.plot_data));
-      } else if (data.result) {
-        document.getElementById("output-8050").innerText = data.result;
-      }
-    } catch (error) {
-      console.error("Error executing code:", error);
-      document.getElementById("output-8050").innerText = `Error: ${error.message}`;
-    }
-  }
-</script>
-
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+<script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+<script is:inline src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
 <style>
-  .code-cell {
-    margin: 20px 0;
+  .plot-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-top: 2rem;
   }
 
-  #code-input {
+  .plot-container > div {
     width: 100%;
-    height: 150px;
-    font-family: monospace;
-    font-size: 14px;
+    min-height: 500px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 1rem;
   }
 
-  .output-placeholder {
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    padding: 10px;
-    margin-top: 10px;
+  #run-code {
+    background: #4CAF50;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
     border-radius: 4px;
-    min-height: 100px;
-    font-family: monospace;
-    font-size: 14px;
+    cursor: pointer;
+  }
+
+  #run-code:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+  }
+
+  .error {
+    color: #dc3545;
+    margin: 1rem 0;
+    padding: 1rem;
+    border: 1px solid currentColor;
+    border-radius: 4px;
   }
 </style>
+
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', () => {
+    const editor = CodeMirror(document.getElementById("editor"), {
+      mode: "python",
+      lineNumbers: true,
+      indentUnit: 4,
+      tabSize: 4,
+      lineWrapping: true,
+      viewportMargin: Infinity,
+      theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'night-owl' : 'min-light',
+      value: `walls = {
+    'Wall 1': {
+        "x": np.array([0, 0, 0]),
+        "y": np.array([0, 3.5, 7]),
+        "z": np.array([0, -72, -152]),
+        'phi': np.array([1/200,1/200]),
+        'height': 5250,
+        'thickness': 27,
+        'area': 34.25,
+        'opening': 4.86
+    }
+}`
+    });
+
+    document.getElementById("run-code").addEventListener("click", async () => {
+      const runButton = document.getElementById("run-code");
+      const code = editor.getValue();
+      const errorDisplay = document.getElementById("error-display");
+      const plotOutput = document.getElementById("plot-output");
+
+      // Clear previous outputs
+      plotOutput.innerHTML = '';
+      errorDisplay.innerHTML = '';
+      
+      // Create plot containers
+      const containers = ['subsurface-plot', 'em-plot', 'ltsm-plot'].map(id => {
+        const div = document.createElement('div');
+        div.id = id;
+        plotOutput.appendChild(div);
+        return div;
+      });
+
+      runButton.classList.add('loading');
+      runButton.disabled = true;
+
+      try {
+        const response = await fetch('http://localhost:8000/api/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, cell_id: "cell-1" })
+        });
+
+        const data = await response.json();
+        
+        if (data.error) {
+          errorDisplay.innerHTML = `
+            <div class="error">
+              <strong>Error</strong>
+              <pre>${data.error}</pre>
+            </div>
+          `;
+        } else if (data.plot_data) {
+          const plots = JSON.parse(data.plot_data);
+          Plotly.newPlot('subsurface-plot', plots.subsurface.data, plots.subsurface.layout);
+          Plotly.newPlot('em-plot', plots.em.data, plots.em.layout);
+          Plotly.newPlot('ltsm-plot', plots.ltsm.data, plots.ltsm.layout);
+        }
+      } catch (error) {
+        errorDisplay.innerHTML = `
+          <div class="error">
+            <strong>Error</strong>
+            <pre>${error.message}</pre>
+          </div>
+        `;
+      } finally {
+        runButton.classList.remove('loading');
+        runButton.disabled = false;
+      }
+    });
+  });
+</script>

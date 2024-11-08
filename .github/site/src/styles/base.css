@@ -46,6 +46,31 @@
   }
   .prose {
     @apply prose-headings:!mb-3 prose-headings:!text-skin-base prose-h3:italic prose-p:!text-skin-base prose-a:!text-skin-base prose-a:!decoration-dashed prose-a:underline-offset-8 hover:prose-a:text-skin-accent prose-blockquote:!border-l-skin-accent/50 prose-blockquote:opacity-80 prose-figcaption:!text-skin-base prose-figcaption:opacity-70 prose-strong:!text-skin-base prose-code:rounded prose-code:bg-skin-card/75 prose-code:p-1 prose-code:before:!content-none prose-code:after:!content-none prose-ol:!text-skin-base prose-ul:overflow-x-clip prose-ul:!text-skin-base prose-li:marker:!text-skin-accent prose-table:text-skin-base prose-th:border prose-th:border-skin-line prose-td:border prose-td:border-skin-line prose-img:!my-2 prose-img:mx-auto prose-img:border-2 prose-img:border-skin-line prose-hr:!border-skin-line;
+
+    & h1 {
+      @apply flex items-center gap-2;
+      
+      & img {
+        @apply !my-0 !border-0 inline-block;
+      }
+    }
+
+    & h1 + p {
+      @apply flex justify-start gap-2 mt-4;
+      
+      & img {
+        @apply !my-0 !border-0 inline-block;
+      }
+    }
+
+    /* Style for dependency badges at the bottom */
+    & p:has(> img[src*="shields.io"]):not(h1 + p) {
+      @apply flex flex-wrap justify-start gap-2;
+      
+      & img {
+        @apply !my-0 !border-0 inline-block;
+      }
+    }
   }
   .prose a {
     @apply break-words hover:!text-skin-accent;
@@ -89,7 +114,7 @@
   }
 
   /* Handle on hover */
-  ::-webkit-scrollbar-thumb:hover {
+  ::-webkit-scrollbar-thumb:hover { 
     @apply bg-skin-card-muted;
   }
 
@@ -124,4 +149,153 @@
   .focus-outline {
     @apply outline-2 outline-offset-1 outline-skin-fill focus-visible:no-underline focus-visible:outline-dashed;
   }
+}
+
+/* CodeMirror Theme Overrides */
+.CodeMirror {
+  @apply font-mono text-base bg-transparent border-0 shadow-none;
+  min-height: 100px;
+  height: auto !important;
+}
+
+.CodeMirror-scroll {
+  min-height: 100px;
+  height: auto !important;
+  overflow-y: hidden !important;
+  overflow-x: auto !important;
+}
+
+.CodeMirror-sizer {
+  margin-bottom: 0 !important;
+}
+
+/* Light theme */
+.cm-s-min-light {
+  background-color: #ffffff !important;
+  color: #24292eff !important;
+}
+
+.cm-s-min-light .CodeMirror-gutters {
+  @apply bg-transparent border-r-0;
+}
+
+.cm-s-min-light .CodeMirror-linenumber {
+  @apply text-gray-400;
+}
+
+/* Dark theme */
+.cm-s-night-owl {
+  background-color: #011627 !important;
+  color: #d6deeb !important;
+}
+
+.cm-s-night-owl .CodeMirror-gutters {
+  @apply bg-transparent border-r-0;
+}
+
+.cm-s-night-owl .CodeMirror-linenumber {
+  @apply text-gray-600;
+}
+
+/* Style the code section */
+.code-section {
+  @apply rounded-lg overflow-hidden border border-skin-line;
+  background-color: rgb(var(--color-fill));
+}
+
+/* Button container */
+.button-container {
+  @apply px-4 py-2 bg-skin-fill;
+}
+
+/* Run button styling */
+#run-code {
+  @apply bg-skin-accent text-skin-inverted px-4 py-1.5 rounded-md text-sm relative;
+  transition: all 0.3s ease-in-out;
+}
+
+#run-code:hover {
+  @apply bg-orange-500;
+  transform: translateY(-1px);
+}
+
+/* Loading state */
+#run-code.loading {
+  @apply cursor-wait;
+}
+
+#run-code.loading::after {
+  content: '';
+  @apply absolute inset-0 bg-skin-accent rounded-md;
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Error display */
+#error-display {
+  @apply mt-4 px-4;
+}
+
+.error {
+  @apply text-red-600 dark:text-red-400 font-normal;
+}
+
+/* Plot output */
+#plot-output {
+  @apply mt-4;
+}
+
+/* Dark theme for CodeMirror */
+.cm-s-night-owl.CodeMirror {
+  background-color: rgb(var(--color-fill)) !important;  /* rgb(0, 0, 0) */
+  color: rgb(var(--color-text-base)) !important;  /* rgb(255, 255, 255) */
+}
+
+/* Gutter background (line numbers area) */
+.cm-s-night-owl .CodeMirror-gutters {
+  background-color: rgb(var(--color-card)) !important;  /* rgb(32, 32, 32) */
+  border-right: 1px solid rgb(var(--color-border));  /* rgb(96, 96, 96) */
+}
+
+/* Line numbers */
+.cm-s-night-owl .CodeMirror-linenumber {
+  color: rgb(var(--color-card-muted));  /* rgb(64, 64, 64) */
+}
+
+/* Active line highlight */
+.cm-s-night-owl .CodeMirror-activeline-background {
+  background-color: rgb(var(--color-card)) !important;  /* rgb(32, 32, 32) */
+}
+
+/* Selection highlight */
+.cm-s-night-owl .CodeMirror-selected {
+  background-color: rgb(var(--color-card-muted)) !important;  /* rgb(64, 64, 64) */
+}
+
+/* Code section container */
+.code-section {
+  @apply rounded overflow-hidden;
+  background-color: rgb(var(--color-fill));
+}
+
+/* Button container */
+.button-container {
+  background-color: rgb(var(--color-fill));
+}
+
+/* CodeMirror placeholder styling */
+.CodeMirror-empty {
+  @apply text-skin-base opacity-50;
+}
+
+.CodeMirror pre.CodeMirror-placeholder {
+  @apply text-skin-base opacity-50;
 }

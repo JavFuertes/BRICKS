@@ -6,7 +6,7 @@ import numpy as np
 import plotly.graph_objects as go
 import json
 import datetime
-import analytical as ba
+import bricks.analytical as ba
 
 app = FastAPI()
 
@@ -29,66 +29,62 @@ async def root():
 @app.post("/api/execute")
 async def execute_cell(data: CodeExecution):
     try:
-        # Create namespace with the correct imports
+        # Create namespace with imports
         namespace = {
             'np': np,
             'ba': ba,
-            'go': go
+            'go': go,
+            'Figure': go.Figure,
+            'json': json
         }
         
-        # Clean the code input
-        code = data.code.strip()
-        if code.startswith('```python'):
-            code = code[9:]
-        if code.endswith('```'):
-            code = code[:-3]
+        # Execute the walls definition
+        exec(data.code, namespace)
         
-        # Execute the code
-        exec(code, namespace)
-        
-        # Handle different types of outputs
-        if 'app' in namespace and isinstance(namespace['app'], go.Figure):
-            return {
-                "cell_id": data.cell_id,
-                "plot_data": json.loads(namespace['app'].to_json())
-            }
-        elif 'app' in namespace:
-            return {
-                "cell_id": data.cell_id,
-                "result": str(namespace['app'])
-            }
+        if 'walls' not in namespace:
+            raise HTTPException(status_code=400, detail="No walls dictionary defined")
+            
+        # Create house object and perform analysis
+        analysis_code = """
+# Create house object
+ijsselsteinseweg = ba.house(measurements=walls)
+
+# Interpolate and fit
+ijsselsteinseweg.interpolate()
+ijsselsteinseweg.fit_function(i_guess=1, tolerance=1e-2, step=1)
+
+# Generate subsurface plot
+params = ijsselsteinseweg.soil['house'].values()
+app1 = ba.subsurface(ijsselsteinseweg, *params)
+
+# Generate EM plot
+ijsselsteinseweg.SRI(tolerance=0.01)
+report = ba.EM(ijsselsteinseweg.soil['sri'])
+app2 = ba.EM_plot(report)
+
+# Generate LTSM plot
+limit_line = -1
+ba.LTSM(ijsselsteinseweg, limit_line, methods=['greenfield','measurements'])
+app3 = ba.LTSM_plot(ijsselsteinseweg)
+
+# Get figures from apps
+figures = []
+for app in [app1, app2, app3]:
+    for child in app.layout.children:
+        if hasattr(child, 'figure'):
+            figures.append(child.figure)
+"""
+        exec(analysis_code, namespace)
         
         return {
             "cell_id": data.cell_id,
-            "result": "Code executed successfully",
-            "variables": {
-                k: str(v) for k, v in namespace.items() 
-                if k not in ['np', 'ba', 'go', '__builtins__']
-            }
+            "plot_data": json.dumps({
+                "subsurface": namespace['figures'][0],
+                "em": namespace['figures'][1], 
+                "ltsm": namespace['figures'][2]
+            })
         }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/health")
-async def health_check():
-    """Check if all components are working"""
-    try:
-        # Test numpy
-        test_array = np.array([1, 2, 3])
-        # Test plotly
-        test_plot = go.Figure()
-        # Test analytical module
-        test_analytical = 'ba' in globals()
-        
-        return {
-            "status": "healthy",
-            "components": {
-                "numpy": "working",
-                "plotly": "working",
-                "analytical": "working" if test_analytical else "failed"
-            },
-            "timestamp": datetime.datetime.now().isoformat()
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))

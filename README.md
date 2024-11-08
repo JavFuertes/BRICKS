@@ -1,4 +1,4 @@
-# Bricks <img src="./.github/assets/favicon.svg" width="35" height="35" style="vertical-align: bottom">
+# Bricks
 
 [![Python Version](https://img.shields.io/badge/Python-3.8%2B-blue?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)

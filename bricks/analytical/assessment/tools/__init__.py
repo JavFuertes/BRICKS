@@ -1,3 +1,4 @@
 from .plots import *
-from .style import *
+
+from .report import *
 from .utils import *
