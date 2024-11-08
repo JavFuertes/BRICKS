@@ -80,7 +80,7 @@ The module breakdown is as follows:
 Install the module through the following command:
 
 ```bash
-pip install git+https://github.com/JavFuertes/BRICKS.git@main#subdirectory=bricks
+pip install git+https://github.com/JavFuertes/BRICKS.git@main
 ```
 
 ## 📝 Citation and Acknowledgements
