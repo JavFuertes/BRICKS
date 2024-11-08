@@ -3,10 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="bricks",
     version="0.1.0",
-    packages=find_packages(include=['bricks*'], exclude=[
-        'bricks._example*',
-        '.github*'
-    ]),
+    packages=find_packages(exclude=['_example*']),
     install_requires=[
         'numpy',
         'pandas', 
@@ -22,4 +19,4 @@ setup(
     ],           
     python_requires='>=3.8',  
     description='Tools for the assessment of masonry structures'          
-) 
+)
