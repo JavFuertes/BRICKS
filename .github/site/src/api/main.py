@@ -1,12 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
 import numpy as np
-import plotly.graph_objects as go
-import json
-import datetime
 import bricks.analytical as ba
+import plotly.graph_objects as go
+from multiprocessing import Process
+import traceback
 
 app = FastAPI()
 
@@ -22,69 +21,120 @@ class CodeExecution(BaseModel):
     code: str
     cell_id: str
 
-@app.get("/")
-async def root():
-    return {"message": "API is running"}
+# Global variables to store our processes
+dash_processes = {}
+
+def create_and_run_dash_app(app_type, hinstance, port, params=None):
+    """Create and run a Dash app for different plot types."""
+    from dash import Dash, html, dcc
+    import flask
+    
+    # Create a Flask server
+    server = flask.Flask(__name__)
+    
+    # Create the Dash app with the necessary configuration
+    app = Dash(__name__, server=server, routes_pathname_prefix='/', requests_pathname_prefix='/')
+    
+    try:
+        if app_type == 'subsurface':
+            app.layout = ba.subsurface(hinstance, *params).layout
+        elif app_type == 'em':
+            report = ba.EM(hinstance.soil['sri'])
+            app.layout = ba.EM_plot(report).layout
+        elif app_type == 'ltsm':
+            app.layout = ba.LTSM_plot(hinstance).layout
+        
+        # Run server on specified port
+        server.run(
+            host='0.0.0.0',
+            port=port,
+            debug=False
+        )
+        
+    except Exception as e:
+        print(f"Error creating {app_type} plot: {str(e)}")
+        raise
 
 @app.post("/api/execute")
-async def execute_cell(data: CodeExecution):
+async def execute_code(data: CodeExecution):
     try:
-        # Create namespace with imports
         namespace = {
             'np': np,
             'ba': ba,
             'go': go,
-            'Figure': go.Figure,
-            'json': json
         }
         
-        # Execute the walls definition
         exec(data.code, namespace)
         
         if 'walls' not in namespace:
-            raise HTTPException(status_code=400, detail="No walls dictionary defined")
+            return {"error": {
+                "type": "ValueError",
+                "message": "No walls dictionary defined"
+            }}
             
-        # Create house object and perform analysis
-        analysis_code = """
-# Create house object
-ijsselsteinseweg = ba.house(measurements=walls)
+        walls = namespace['walls']
+            
+        try:
+            # Stop existing processes
+            for process in dash_processes.values():
+                if process and process.is_alive():
+                    process.terminate()
+                    process.join()
+            
+            hinstance = ba.house(measurements=walls)
+            
+            # Preprocess data
+            hinstance.interpolate()
+            hinstance.fit_function(i_guess=1, tolerance=1e-2, step=1)
+            hinstance.SRI(tolerance=0.01)
+            
+            # Run LTSM analysis
+            limit_line = -1
+            ba.LTSM(hinstance, limit_line, methods=['greenfield','measurements'])
+            
+            # Generate and serve plots
+            plots_config = [
+                ('subsurface', 8050, list(hinstance.soil['house'].values())),
+                ('em', 8051, None),
+                ('ltsm', 8052, None)
+            ]
 
-# Interpolate and fit
-ijsselsteinseweg.interpolate()
-ijsselsteinseweg.fit_function(i_guess=1, tolerance=1e-2, step=1)
-
-# Generate subsurface plot
-params = ijsselsteinseweg.soil['house'].values()
-app1 = ba.subsurface(ijsselsteinseweg, *params)
-
-# Generate EM plot
-ijsselsteinseweg.SRI(tolerance=0.01)
-report = ba.EM(ijsselsteinseweg.soil['sri'])
-app2 = ba.EM_plot(report)
-
-# Generate LTSM plot
-limit_line = -1
-ba.LTSM(ijsselsteinseweg, limit_line, methods=['greenfield','measurements'])
-app3 = ba.LTSM_plot(ijsselsteinseweg)
-
-# Get figures from apps
-figures = []
-for app in [app1, app2, app3]:
-    for child in app.layout.children:
-        if hasattr(child, 'figure'):
-            figures.append(child.figure)
-"""
-        exec(analysis_code, namespace)
-        
-        return {
-            "cell_id": data.cell_id,
-            "plot_data": json.dumps({
-                "subsurface": namespace['figures'][0],
-                "em": namespace['figures'][1], 
-                "ltsm": namespace['figures'][2]
-            })
-        }
-        
+            for plot_type, port, plot_params in plots_config:
+                p = Process(target=create_and_run_dash_app, 
+                          args=(plot_type, hinstance, port, plot_params))
+                p.start()
+                dash_processes[plot_type] = p
+            
+            return {
+                "success": True,
+                "ports": {
+                    "subsurface": 8050,
+                    "em": 8051,
+                    "ltsm": 8052
+                }
+            }
+            
+        except Exception as e:
+            return {"error": {
+                "type": "ProcessingError",
+                "message": str(e),
+                "traceback": traceback.format_exc()
+            }}
+            
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"error": {
+            "type": type(e).__name__,
+            "message": str(e),
+            "traceback": traceback.format_exc()
+        }}
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    for process in dash_processes.values():
+        if process and process.is_alive():
+            process.terminate()
+
+@app.get("/")
+async def root():
+    return {"message": "API is running"}
 

@@ -13,8 +13,6 @@ setup(
         'scipy',
         'tabulate',
         'matplotlib',
-        'torch',
-        'botorch',
         'plotly',
         'dash',
         'scikit-learn',

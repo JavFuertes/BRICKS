@@ -2,7 +2,6 @@
 import Layout from "@layouts/Layout.astro";
 import Header from "@components/Header.astro";
 import Footer from "@components/Footer.astro";
-
 import Breadcrumbs from "@components/Breadcrumbs.astro";
 import { SITE } from "@config";
 
@@ -17,169 +16,249 @@ const notebookContent = {
   <Header activeNav="posts" />  
   <Breadcrumbs /> 
   <main id="main-content">
-    <section>
-      <h1 class="!mt-0 !mb-3 text-xl font-semibold tracking-tight text-skin-base not-prose">
-        Perform your analytical Assessment
-      </h1>
-      <div class="prose">
-        <p>
-          This page provides analytical assessment tools for evaluating subsidence-induced damage in masonry structures. Using a set of <code>empirical</code> deformation limits and <code>analytical</code> methods mainly the Limit Tensile Strain Method, it helps predict a building's vulnerability to damage based on measured deformations.
-        </p>
-        
-        <p>
-          To analyze your building, you'll need to provide the following data for each wall:
-        </p>
-        
-        <ul>
-          <li><strong>3D Coordinates:</strong> (x, y, z) positions in meters/millimeters</li>
-          <li><strong>Deformation:</strong> Angular distortions (phi)</li>
-          <li><strong>Geometry:</strong> Height, thickness, total area, and opening areas</li>
-        </ul>
-
-        <p>
-          Enter your building's data in the format shown when clicking the code cell below. Ensure consistent units for accurate analysis.
-        </p>
-      </div>
-
-      <h2 class="!mt-8 !mb-3 text-xl font-semibold tracking-tight text-skin-base">
-        0.1 | Define your house's dimensions and measurements
-      </h2>
+    <section class="prose max-w-3xl mx-auto px-4">
+      <h1>Analytical Assessment</h1>
+      <p class="mb-4">
+        Enter your building's data using the code editor below. All measurements should be in SI units (meters for dimensions, radians for angles).
+      </p>
       
-      <div class="code-section">
+      <div class="code-section mb-8">
+        <h3>Define your HOUSE dimensions and measurements</h3>
         <div id="editor"></div>
-        <div class="button-container">
-          <button id="run-code">Run Analysis</button>
+        <div class="button-container p-4">
+          <button id="run-code">Analyze Building</button>
         </div>
       </div>
+
       <div id="error-display"></div>
-      <div id="plot-output" class="plot-container"></div>
+
+      <div id="results" class="mt-8 space-y-8 w-full">
+        <div class="plot-container">
+          <h3>Estimating the Displacement Surface & Greenfield Profile</h3>
+          <div class="iframe-wrapper">
+            <iframe src="http://localhost:${data.ports.subsurface}/" class="plot-iframe"></iframe>
+          </div>
+        </div>
+   
+        <div class="plot-container">
+          <h3>Assessment through Empirical Methods</h3>
+          <div class="iframe-wrapper">
+            <iframe src="http://localhost:${data.ports.em}/" class="plot-iframe"></iframe>
+          </div>
+        </div>
+   
+        <div class="plot-container">
+          <h3>Assessment through the LTSM</h3>
+          <div class="iframe-wrapper">
+            <iframe src="http://localhost:${data.ports.ltsm}/" class="plot-iframe"></iframe>
+          </div>
+        </div>
+      </div>
     </section>
   </main>
-
   <Footer />
 </Layout>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/night-owl.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/min-light.min.css"/>
 
 <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
 <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
 <script is:inline src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
-<style>
-  .plot-container {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-    margin-top: 2rem;
-  }
-
-  .plot-container > div {
-    width: 100%;
-    min-height: 500px;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    padding: 1rem;
-  }
-
-  #run-code {
-    background: #4CAF50;
-    color: white;
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  #run-code:disabled {
-    background: #cccccc;
-    cursor: not-allowed;
-  }
-
-  .error {
-    color: #dc3545;
-    margin: 1rem 0;
-    padding: 1rem;
-    border: 1px solid currentColor;
-    border-radius: 4px;
-  }
-</style>
-
-<script is:inline>
-  document.addEventListener('DOMContentLoaded', () => {
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Set theme based on document theme
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    
     const editor = CodeMirror(document.getElementById("editor"), {
-      mode: "python",
-      lineNumbers: true,
-      indentUnit: 4,
-      tabSize: 4,
-      lineWrapping: true,
-      viewportMargin: Infinity,
-      theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'night-owl' : 'min-light',
-      value: `walls = {
+        mode: "python",
+        lineNumbers: true,
+        theme: isDark ? 'night-owl' : 'min-light',
+        lineWrapping: true,
+        value: `
+walls = {
     'Wall 1': {
-        "x": np.array([0, 0, 0]),
-        "y": np.array([0, 3.5, 7]),
-        "z": np.array([0, -72, -152]),
-        'phi': np.array([1/200,1/200]),
-        'height': 5250,
+        "x": np.array([0, 0, 0]), 
+        "y": np.array([0, 3.5, 7]), 
+        "z": np.array([0, -72, -152]), 
+        'phi': np.array([1/200,1/200]), 
+        'height': 5250, 
         'thickness': 27,
-        'area': 34.25,
+        'area': 34.25, 
         'opening': 4.86
     }
 }`
     });
 
-    document.getElementById("run-code").addEventListener("click", async () => {
-      const runButton = document.getElementById("run-code");
-      const code = editor.getValue();
-      const errorDisplay = document.getElementById("error-display");
-      const plotOutput = document.getElementById("plot-output");
-
-      // Clear previous outputs
-      plotOutput.innerHTML = '';
-      errorDisplay.innerHTML = '';
-      
-      // Create plot containers
-      const containers = ['subsurface-plot', 'em-plot', 'ltsm-plot'].map(id => {
-        const div = document.createElement('div');
-        div.id = id;
-        plotOutput.appendChild(div);
-        return div;
-      });
-
-      runButton.classList.add('loading');
-      runButton.disabled = true;
-
-      try {
-        const response = await fetch('http://localhost:8000/api/execute', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, cell_id: "cell-1" })
+    // Theme observer
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'data-theme') {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                editor.setOption('theme', isDark ? 'night-owl' : 'min-light');
+            }
         });
-
-        const data = await response.json();
-        
-        if (data.error) {
-          errorDisplay.innerHTML = `
-            <div class="error">
-              <strong>Error</strong>
-              <pre>${data.error}</pre>
-            </div>
-          `;
-        } else if (data.plot_data) {
-          const plots = JSON.parse(data.plot_data);
-          Plotly.newPlot('subsurface-plot', plots.subsurface.data, plots.subsurface.layout);
-          Plotly.newPlot('em-plot', plots.em.data, plots.em.layout);
-          Plotly.newPlot('ltsm-plot', plots.ltsm.data, plots.ltsm.layout);
-        }
-      } catch (error) {
-        errorDisplay.innerHTML = `
-          <div class="error">
-            <strong>Error</strong>
-            <pre>${error.message}</pre>
-          </div>
-        `;
-      } finally {
-        runButton.classList.remove('loading');
-        runButton.disabled = false;
-      }
     });
-  });
+
+    observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-theme']
+    });
+
+    document.getElementById("run-code").addEventListener("click", async () => {
+        const runButton = document.getElementById("run-code");
+        const errorDisplay = document.getElementById("error-display");
+        const results = document.getElementById("results");
+
+        runButton.disabled = true;
+        runButton.classList.add('loading');
+        errorDisplay.innerHTML = '';
+        results.innerHTML = '<div class="loading">Analyzing...</div>';
+
+        try {
+            const response = await fetch('/api/execute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    code: editor.getValue(),
+                    cell_id: "cell-1" 
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                errorDisplay.innerHTML = `
+                    <div class="error-message">
+                        <strong>${data.error.type}:</strong> ${data.error.message}
+                        <pre>${data.error.traceback}</pre>
+                    </div>
+                `;
+                results.innerHTML = '';
+            } else {
+                results.innerHTML = `
+                    <div class="plot-container">
+                        <h3>Estimating the Displacement Surface & Greenfield Profile</h3>
+                        <div class="iframe-wrapper">
+                            <iframe src="http://localhost:${data.ports.subsurface}/" class="plot-iframe"></iframe>
+                        </div>
+                    </div>
+
+                    <div class="plot-container">
+                        <h3>Assessment through Empirical Methods</h3>
+                        <div class="iframe-wrapper">
+                            <iframe src="http://localhost:${data.ports.em}/" class="plot-iframe"></iframe>
+                        </div>
+                    </div>
+
+                    <div class="plot-container">
+                        <h3>Assessment through the LTSM</h3>
+                        <div class="iframe-wrapper">
+                            <iframe src="http://localhost:${data.ports.ltsm}/" class="plot-iframe"></iframe>
+                        </div>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            errorDisplay.innerHTML = `
+                <div class="error-message">
+                    <strong>Error:</strong> ${error.message}
+                </div>
+            `;
+            results.innerHTML = '';
+        } finally {
+            runButton.disabled = false;
+            runButton.classList.remove('loading');
+        }
+    });
+});
 </script>
+
+<style>
+  .code-section {
+    border: 1px solid var(--skin-line);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    width: 100%;
+  }
+  
+  #run-code {
+    background-color: var(--skin-accent);
+    color: var(--skin-inverted);
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+  }
+  
+  #run-code.loading {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .error-message {
+    background-color: rgba(255, 0, 0, 0.1);
+    border-left: 4px solid red;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 0.375rem;
+  }
+
+  /* CodeMirror specific overrides */
+  :global(.CodeMirror) {
+    height: auto !important;
+    width: 100% !important;
+    font-size: 14px;
+  }
+
+  :global(.CodeMirror-scroll) {
+    min-height: 200px;
+    max-height: 400px;
+  }
+
+  :global(.CodeMirror-wrap) {
+    width: 100%;
+  }
+
+  :global(.plot-iframe) {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 600px !important;
+    border: none !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.2em;
+    color: #555;
+  }
+
+  .button-container {
+    display: flex;
+    justify-content: center;
+  }
+
+  #results {
+    width: 100%;
+    max-width: none;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  pre code {
+    display: block;
+    padding: 1rem;
+    background-color: var(--skin-card);
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    font-family: monospace;
+  }
+</style>

@@ -303,9 +303,6 @@ def subsurface(OBJECT, *params):
     app.layout = html.Div([
         dcc.Tabs(tabs)
     ])
-
-    if __name__ == '__main__':
-        app.run_server(debug=False)
-
+    
     return app
 

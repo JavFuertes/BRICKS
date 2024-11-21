@@ -23,24 +23,22 @@ def get_colors_from_cmap(cmap_name, num_colors, opacity=0.7):  # Default opacity
         colors.append(f'rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, {opacity})')
     return colors
 
-bvals = [-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]  # Adjusted for correct interval mapping
-colors = get_colors_from_cmap('RdYlGn_r', len(bvals) - 1, opacity=0.7)  # Colors with 70% opacity
+bvals = [-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]  
+colors = get_colors_from_cmap('RdYlGn_r', len(bvals) - 1, opacity=0.7)  
 
 def discrete_colorscale(bvals, colors):
     if len(bvals) != len(colors) + 1:
         raise ValueError('len(boundary values) should be equal to len(colors) + 1')
     bvals = sorted(bvals)
-    nvals = [(v - bvals[0]) / (bvals[-1] - bvals[0]) for v in bvals]  # normalized values
+    nvals = [(v - bvals[0]) / (bvals[-1] - bvals[0]) for v in bvals]  
     
     dcolorscale = []
     for k in range(len(colors)):
         dcolorscale.extend([[nvals[k], colors[k]], [nvals[k + 1], colors[k]]])
     return dcolorscale
 
-# Generate the discrete color scale
 dcolorsc = discrete_colorscale(bvals, colors)
 
-# Calculate tick values and labels for the color bar
 tickvals = [np.mean(bvals[k:k+2]) for k in range(len(bvals) - 1)]
 ticktext = ['DL0', 'DL1', 'DL2', 'DL3', 'DL4', 'DL5']
 
@@ -127,8 +125,5 @@ def EM_plot(report):
     tabs_content = [dcc.Tab(label=f"{wall.capitalize()}", children=[dcc.Graph(figure=fig)], style=tab_heading_style, selected_style=tab_heading_style) for wall, fig in zip(walls, figs)]
 
     app.layout = html.Div([dcc.Tabs(children=tabs_content)], style={'backgroundColor': 'white'})
-
-    if __name__ == '__main__': 
-        app.run_server(debug=False)
 
     return app

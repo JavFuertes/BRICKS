@@ -33,7 +33,7 @@
   }
   section,
   footer {
-    @apply mx-auto max-w-3xl px-4;
+    @apply mx-auto max-w-4xl px-4;
   }
   a {
     @apply outline-2 outline-offset-1 outline-skin-fill focus-visible:no-underline focus-visible:outline-dashed;
@@ -140,6 +140,12 @@
     font-weight: var(--shiki-dark-font-weight) !important;
     text-decoration: var(--shiki-dark-text-decoration) !important;
   }
+
+  header,
+  main,
+  footer {
+    @apply mx-auto max-w-4xl px-4;
+  }
 }
 
 @layer components {
@@ -148,10 +154,11 @@
   }
   .focus-outline {
     @apply outline-2 outline-offset-1 outline-skin-fill focus-visible:no-underline focus-visible:outline-dashed;
-  }
+  } 
+
 }
 
-/* CodeMirror Theme Overrides */
+
 .CodeMirror {
   @apply font-mono text-base bg-transparent border-0 shadow-none;
   min-height: 100px;

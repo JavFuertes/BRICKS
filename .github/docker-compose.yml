@@ -1,3 +1,4 @@
+version: "3.8"
 services:
   app:
     build:
@@ -6,7 +7,13 @@ services:
     ports:
       - "4321:4321"
       - "8000:8000"
-    volumes:
-      - ../bricks:/app/bricks
+      - "8050:8050"
+      - "8051:8051"
+      - "8052:8052"
     environment:
       - PORT=8000
+      - NODE_ENV=development  # Set the environment to development
+    volumes:
+      - ./src:/app/src  # Bind mount for the source code
+      - ./bricks:/app/bricks  # Bind mount for bricks if needed
+      - ./README.md:/app/README.md  # Bind mount for README if needed
