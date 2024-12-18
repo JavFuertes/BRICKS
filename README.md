@@ -2,7 +2,6 @@
 
 [![Python Version](https://img.shields.io/badge/Python-3.8%2B-blue?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/JavFuertes/BRICKS?style=for-the-badge&logo=github)](https://github.com/JavFuertes/BRICKS/stargazers)
 
 Due to the Netherlands' topography and geology, many regions have weak soil resistance, causing numerous buildings to experience settlements from subsidence processes, with masonry structures being the most commonly affected. In these buildings, damage typically appears as cracks and deformations, indicating the foundation’s inability to support the structure. To enhance decision-making and the engineering of effective countermeasures in these scenarios, accurate and reliable building assessments are needed to predict the expected damage based on the amount of soil deformations.
 
